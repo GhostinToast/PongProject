@@ -1,6 +1,6 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
+# Contributing Authors:	    Alexander Wise,
+# Email Addresses:          Alex.Wise@uky.edu,
 # Date:                     <The date the file was last edited>
 # Purpose:                  <How this file contributes to the project>
 # Misc:                     <Not Required.  Anything else you might want to include>
@@ -92,7 +92,34 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
         
-        
+        # Dictonary to send the client's game data to the server
+        dataFrame = {
+            # Essentially the seq # for the frame
+            'seq': sync,
+
+            # Player Paddle's x and y positions
+            'playerpaddlex': playerPaddleObj.rect.x,
+            'playerpaddley': playerPaddleObj.rect.y,
+
+            # Opponent Paddle's x and y positions
+            #'opponentpaddlex': opponentPaddleObj.rect.x,
+            #'opponentpaddley': opponentPaddleObj.rect.y,
+
+            # Ball's x and y positions
+            'ballx': ball.rect.x,
+            'bally': ball.rect.y,
+
+            # Scores
+            'playerScore': lScore,
+            'opponentScore': rScore
+        }
+        # Encode the frame as a json string
+        jsonFrame = json.dumps(dataFrame)
+        # Encode the string and finally send it to server
+        socket.sendall(jsonFrame.encode)
+
+        # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
+
         # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
@@ -164,6 +191,24 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
 
+        # Receive the latest copy of game data from the server
+        byteStream = socket.recv(1024)
+        # WIP: Make sure what's received is a game data frame....
+        # Decode bytestream into json data and convert it to dictionary
+        latestGame = json.loads(byteStream.decode)
+        # Update game params based on the latestGame data
+        sync = latestGame['seq']
+        if playerPaddle == "left":
+            opponentPaddleObj.rect.x = latestGame['rpad'][0]
+            opponentPaddleObj.rect.y = latestGame['rpad'][1]
+        else:
+            opponentPaddleObj.rect.x = latestGame['lpad'][0]
+            opponentPaddleObj.rect.y = latestGame['lpad'][1]
+        ball.rect.x = latestGame['ball'][0]
+        ball.rect.y = latestGame['ball'][1]
+        lScore = latestGame['score'][0]
+        rScore = latestGame['lpad'][1]
+
         # =========================================================================================
 
 
@@ -186,10 +231,13 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     #Connect to server with specified host ip 
-    client.connect((HOST, PORT))                            # Connecting to server
+    client.connect((HOST, PORT))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    
+    # Receive encoded data from the server
+    byteStream = client.recv(1024)
+    # Decode bytestream into json data and convert it to dictionary
+    initData = json.loads(byteStream.decode)
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
@@ -197,9 +245,9 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     errorLabel.update()     
 
     # Close this window and start the game with the info passed to you from the server
-    #app.withdraw()     # Hides the window (we'll kill it later)
-    #playGame(screenWidth, screenHeight, ("left"|"right"), client)  # User will be either left or right paddle
-    #app.quit()         # Kills the window
+    app.withdraw()     # Hides the window (we'll kill it later)
+    playGame(initData['screenwidth'], initData['screenheight'], initData['playerpaddle'], client)  # User will be either left or right paddle
+    app.quit()         # Kills the window
 
 
 # This displays the opening screen, you don't need to edit this (but may if you like)
@@ -239,3 +287,20 @@ if __name__ == "__main__":
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
     playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+
+
+# WIP: Just in case we need error handling for recv'ing
+# Author:        Alexander Wise
+# Purpose:       Handles the receiving of encoded json dictionaries from the server.
+# Pre:           This method expects a client socket to be connected to a server that is sending data.
+# Post:          The method returns a dictionary or null.
+def fetchServer(clientSocket) -> dict:
+    # Arguments: 
+    # clientSocket  The socket of the client
+    try:
+        # Receive encoded data from the server
+        byteStream = socket.recv(1024)
+        # Decode bytestream into json data and convert it to dictionary
+        return json.loads(byteStream.decode)
+    except:
+        return None # And maybe some errors msgs...

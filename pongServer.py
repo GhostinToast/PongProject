@@ -1,6 +1,6 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
+# Contributing Authors:	    Alexander Wise,
+# Email Addresses:          Alex.Wise@uky.edu,
 # Date:                     <The date the file was last edited>
 # Purpose:                  <How this file contributes to the project>
 # Misc:                     <Not Required.  Anything else you might want to include>
@@ -8,7 +8,7 @@
 
 
 
-#1.0.1- loose n rough, modifying nescesary(untested) (you proably shouldnt run this)
+#1.1.0- You can try running this (still untested)... It might work... maybe...
 import socket
 import threading
 # used to encode to strings for the sending to and from server
@@ -41,13 +41,12 @@ gameSave = {
     'lefton' : False,
     'righton' : False,
 
-
     #x and y coordinates of the right paddle
     'rpad': [0,0],
     #x and y coordinates of the left paddle
     'lpad' : [0,0],
 
-    # x and y coordinates of the ball
+    #x and y coordinates of the ball
     'ball': [0,0],
 
     #right and left hand side scores
@@ -55,24 +54,45 @@ gameSave = {
 
     #player side, left or right
     'playerpaddle' : 'null',
+        
+    #client screen width/height (may collect instead of hardcode later)
+    'screenwidth': 640,
+    'screenheight': 480, 
 
     # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
     # clients are and take actions to resync the games
     'sync' : 0
+
 }
 
-def clientupdate(socket, playerpaddle):
-    
-    if playerpaddle == 'left': #left hand side stuff
-        #check rhs sync
-        #if rhssync > lhssync
-            #wu oh
-            #replace lhs stuff with rhs stuff
-            #pass back to the lhs client
-        #else
-            #update score with lhs things
-    if playerpaddle == 'right':
-        #do right hand side stuff: just opposite of above
+def clientupdate(socket, playerPaddle):
+    # WIP: Any reading/writing of gameSave probably needs some mutexes/semaphores, but that's for another day
+    while (True):
+        # Retrieve the (hopefully) latest game frame as encoded data from the client
+        byteStream = socket.recv(1024)
+        # Decode bytestream into json data and convert it to dictionary
+        frameData = json.loads(byteStream.decode)
+        # Check against sync
+        if frameData['seq'] < gameSave['sync']:
+            # Client needs the latest game data
+            # Encode the game data as a json string
+            jsonGame = json.dumps(gameSave)
+            # Encode the string and finally send it to client
+            socket.sendall(jsonGame.encode)
+        else:
+            # Edit server data instead
+            if playerPaddle == 'left': 
+                gameSave['lpad'][0] = frameData['playerpaddlex']
+                gameSave['lpad'][1] = frameData['playerpaddley']
+                gameSave['score'][0] = frameData['playerScore']
+                gameSave['score'][1] = frameData['opponentScore']
+            else:
+                gameSave['rpad'][0] = frameData['playerpaddlex']
+                gameSave['rpad'][1] = frameData['playerpaddley']
+                gameSave['score'][1] = frameData['playerScore']
+                gameSave['score'][0] = frameData['opponentScore']
+            gameSave['sync'] = frameData['seq']
+
 
 
 def main():
@@ -108,15 +128,17 @@ def main():
             rawConn['righton'] = True
             rawConn['lefton'] = True
             rawConn['playerpaddle'] = 'right'
+
         # json encode the rawConn
         jsonConn = json.dumps(rawConn)
         # send the encoded newConn to the client:
-        clientSocket.send(jsonConn.encode())
+        clientSocket.sendall(jsonConn.encode())
         # perhaps have the clients respond with confirmations?
+        
     # current issues (FIXED): the first client won't think client 2 is connected 
 
 
     # while either socket not error:
-        socket, address = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        clientSocket, clientAddress = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        threading = threading.Thread(target=clientupdate, args=(socket, playerpaddle))
+        threading = threading.Thread(target=clientupdate, args=(clientSocket, playerpaddle))
