@@ -14,6 +14,14 @@ import threading
 # used to encode to strings for the sending to and from server
 import json
 
+# Constants
+# IP of the host of the server. 
+# Ensure that the IP is the same as the pongClient.py.
+HOST = "localhost"
+# Port # of the server. Set > 1023 for non-priveleged ports. 
+# Ensure that the # is the same as the pointClient.py.
+PORT = 2*14 - 1
+
 
 # MFW's notes 
 #   gameSave is a universal dictionary. It will be updated a bunch
@@ -77,7 +85,7 @@ def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # set up the IP port we're listening to
     # we're probably going to change this from localhost
-    server.bind(("localhost", 5000))
+    server.bind((HOST, PORT))
     # this loop connects the clients (2 clients) and
     # sends them copies of gamesave with appropriate
     # paddles and boolean connection values
