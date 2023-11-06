@@ -12,8 +12,15 @@ import sys
 import socket
 import json
 
-from assets.code.helperCode import *
+# Constants
+# IP of the host of the server. 
+# Ensure that the IP is the same as the pongServer.py.
+HOST = "localhost"
+# Port # of the server. Set > 1023 for non-reserved ports. 
+# Ensure that the # is the same as the pongServer.py.
+PORT = 2*14 - 1
 
+from assets.code.helperCode import *
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
@@ -177,9 +184,12 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    #Connect to server with specified host ip 
+    client.connect((HOST, PORT))                            # Connecting to server
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-
+    
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
