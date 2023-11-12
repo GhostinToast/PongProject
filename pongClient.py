@@ -21,6 +21,8 @@ HOST = "localhost"
 PORT = 2*14 - 1
 
 from assets.code.helperCode import *
+
+
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
@@ -240,4 +242,3 @@ if __name__ == "__main__":
     # here for demo purposes only
     playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 
-def 

@@ -13,14 +13,14 @@ import socket
 import threading
 # used to encode to strings for the sending to and from server
 import json
-
+from socket_wrapper import sock_wrapper
 # Constants
 # IP of the host of the server. 
 # Ensure that the IP is the same as the pongClient.py.
 HOST = "localhost"
 # Port # of the server. Set > 1023 for non-priveleged ports. 
 # Ensure that the # is the same as the pointClient.py.
-PORT = 2*14 - 1
+PORT = 4000
 
 
 # MFW's notes 
@@ -32,91 +32,95 @@ PORT = 2*14 - 1
 
 # Use this file to write your server logic
 # You will need to support at least two clients
+# Game Information
+class gameSave:
+    def __init__(self):
+        self.ball_lock = threading.Lock()
+        self.ball = [0,0] # X, Y
 
-gameSave = {
-    # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
-    # for each player and where the ball is, and relay that to each client
+        self.score_lock = threading.Lock()
+        self.score = [0,0] # lScore, rScore
 
-    #bools that show if the left and right servers are on
-    'lefton' : False,
-    'righton' : False,
+        self.rPaddle_lock = threading.Lock()
+        self.rPaddle = [0,0,''] # X, Y, Moving
 
+        self.lPaddle_lock = threading.Lock()
+        self.lPaddle = [0,0,''] # X, Y, Moving
 
-    #x and y coordinates of the right paddle
-    'rpad': [0,0],
-    #x and y coordinates of the left paddle
-    'lpad' : [0,0],
+        self.sync_lock = threading.Lock()
+        self.sync = 0 # The current sync between the two clients
 
-    # x and y coordinates of the ball
-    'ball': [0,0],
+        self.lReady_lock = threading.Lock()
+        self.lReady = False # Is the left player ready to start?
 
-    #right and left hand side scores
-    'score': [0,0],
+        self.rReady_lock = threading.Lock()
+        self.rReady = False # is the right player ready to start?
 
-    #player side, left or right
-    'playerpaddle' : 'null',
+class ServerControl:
+    def __init__(self):
+        print('Server Online')
 
-    # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
-    # clients are and take actions to resync the games
-    'sync' : 0
-}
+        # Create our server type 1 socket
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def clientupdate(socket, playerpaddle):
-    
-    if playerpaddle == 'left': #left hand side stuff
-        #check rhs sync
-        #if rhssync > lhssync
-            #wu oh
-            #replace lhs stuff with rhs stuff
-            #pass back to the lhs client
-        #else
-            #update score with lhs things
-    if playerpaddle == 'right':
-        #do right hand side stuff: just opposite of above
+        # Bind the server socket to the HOST and PORT
+        self.server.bind((HOST, PORT))
 
+        # List of client threads
+        self.clientThreads = []
 
-def main():
-    #uhhh idk how most of this works, is mostly the theory
-    #before both are in, a loop will ask server if both are online
-    #i think that client mayyyy turn the bool to on?
-   
+        # Event to shutdown the server
+        self.shutDown = threading.Event()
 
-    # create TCP socket
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # set up the IP port we're listening to
-    # we're probably going to change this from localhost
-    server.bind((HOST, PORT))
-    # this loop connects the clients (2 clients) and
-    # sends them copies of gamesave with appropriate
-    # paddles and boolean connection values
-    server.listen(5)
-    for i in range(1):
-        # clientSocket, a is the address
-        clientSocket, a = server.accept()
-        # then once we got the connection,
-        rawConn = gameSave
-        # make a new dict and cnange its 'playerpaddle'
-        # left is 1, right is 2.
-        rawConn['name'] = i+1
-        # then update the connection boolean values
-        if i+1 == 1:
-            # ^^ left side
-            rawConn['lefton'] = True
-            rawConn['playerpaddle'] = 'left'
-        if i+1 == 2:
-            # ^^ right side
-            rawConn['righton'] = True
-            rawConn['lefton'] = True
-            rawConn['playerpaddle'] = 'right'
-        # json encode the rawConn
-        jsonConn = json.dumps(rawConn)
-        # send the encoded newConn to the client:
-        clientSocket.send(jsonConn.encode())
-        # perhaps have the clients respond with confirmations?
-    # current issues (FIXED): the first client won't think client 2 is connected 
+        self.server.listen()
+
+        self.game = gameSave()
+
+        self.clientNumber = 0
+        self.maxClient = 2
+
+        while not self.shutDown.is_set() and self.clientNumber < self.maxClient:
+            # Accept a connection from a client
+            newClient, _ = self.server.accept()
+
+            # Create a new thread for each client
+            newThread = threading.Thread(target=self.clientControl, args=(newClient, self.clientNumber))
+            newThread.start()
+
+            self.clientNumber += 1
 
 
-    # while either socket not error:
-        socket, address = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.close()
 
-        threading = threading.Thread(target=clientupdate, args=(socket, playerpaddle))
+        for client in self.clientThreads:
+            client.join()
+
+        print('Server Closing')
+
+    def clientControl(self, clientSocket, clientNumber):
+        
+        Connection = ClientWrapper(clientSocket)
+
+        while not self.shutDown.is_set() and not Connection.closed:
+            
+            # Receive data from the client
+            _ , newMessage = Connection.recv()
+            if newMessage is None:
+                break
+            if newMessage['type'] == 'start':
+            #check if right side is connected
+            #check if left side is connected
+            #if so, send "yes", else "no"
+                continue
+            if newMessage['type'] == 'gimme':
+            #send it the data from other client using the game save
+            #send type:gimme return:dictionary
+            #send type:update return:dictionary
+                continue
+            if newMessage['type'] == 'update':
+            #using dict passed in,
+            #check the sync number
+            #if its a lil fucky wucky, 
+            #use game save to update client dict.
+            #else
+            #update game save using dict passed in
