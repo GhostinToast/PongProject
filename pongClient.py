@@ -20,7 +20,16 @@ HOST = "localhost"
 # Ensure that the # is the same as the pongServer.py.
 PORT = 2*14 - 1
 
+# Constants
+# IP of the host of the server. 
+# Ensure that the IP is the same as the pongServer.py.
+HOST = "localhost"
+# Port # of the server. Set > 1023 for non-reserved ports. 
+# Ensure that the # is the same as the pongServer.py.
+PORT = 2*14 - 1
+
 from assets.code.helperCode import *
+
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
