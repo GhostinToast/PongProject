@@ -30,8 +30,10 @@ class sock_wrapper:
             return False, None
         except json.JSONDecodeError as e:
             print('error: ', e)
+            return False, None
         except UnicodeDecodeError as e:
             print('error: ', e)
+            return False, None
         return True, jsinfo
     def close(self) -> bool:
         self.holder.close()

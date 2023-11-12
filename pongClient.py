@@ -28,6 +28,7 @@ HOST = "localhost"
 # Ensure that the # is the same as the pongServer.py.
 PORT = 2*14 - 1
 
+
 from assets.code.helperCode import *
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
@@ -290,7 +291,7 @@ def startScreen():
     app.mainloop()
 
 if __name__ == "__main__":
-    #startScreen()
+    startScreen()
     
     # Uncomment the line below if you want to play the game without a server to see how it should work
     # the startScreen() function should call playGame with the arguments given to it by the server this is
