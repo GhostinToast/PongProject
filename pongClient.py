@@ -106,6 +106,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         
         # Dictonary to send the client's game data to the server
         dataFrame = {
+
             # Essentially the seq # for the frame
             'seq': sync,
 
@@ -114,21 +115,27 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             'playerpaddley': playerPaddleObj.rect.y,
 
             # Opponent Paddle's x and y positions
-            #'opponentpaddlex': opponentPaddleObj.rect.x,
-            #'opponentpaddley': opponentPaddleObj.rect.y,
+            'opponentpaddlex': opponentPaddleObj.rect.x,
+            'opponentpaddley': opponentPaddleObj.rect.y,
 
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
 
+            'playermov': ""
+
             # Scores
             'playerScore': lScore,
             'opponentScore': rScore
         }
+        mess = {
+            'type': 'update',
+            'data': dataFrame
+        }
         # Encode the frame as a json string
-        jsonFrame = json.dumps(dataFrame)
+        
         # Encode the string and finally send it to server
-        socket.sendall(jsonFrame.encode)
+        sock_wrapper.send(mess)
 
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
 
@@ -202,12 +209,16 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # =========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
-
+        mess = {
+            'type': 'gimme',
+            'data': dataFrame
+        }
+        sock_wrapper.send(mess)
+        
         # Receive the latest copy of game data from the server
-        byteStream = socket.recv(1024)
+        dataFrame = sock_wrapper.recv()
         # WIP: Make sure what's received is a game data frame....
         # Decode bytestream into json data and convert it to dictionary
-        latestGame = json.loads(byteStream.decode)
         # Update game params based on the latestGame data
         sync = latestGame['seq']
         if playerPaddle == "left":
