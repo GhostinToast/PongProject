@@ -20,16 +20,7 @@ from socket_wrapper import sock_wrapper
 HOST = "localhost"
 # Port # of the server. Set > 1023 for non-reserved ports. 
 # Ensure that the # is the same as the pongServer.py.
-PORT = 2*14 - 1
-
-# Constants
-# IP of the host of the server. 
-# Ensure that the IP is the same as the pongServer.py.
-HOST = "localhost"
-# Port # of the server. Set > 1023 for non-reserved ports. 
-# Ensure that the # is the same as the pongServer.py.
-PORT = 2*14 - 1
-
+PORT = 6000
 
 from assets.code.helperCode import *
 
@@ -122,7 +113,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
 
-            'playermov': ""
+            'playermov': "",
 
             # Scores
             'playerScore': lScore,
@@ -216,15 +207,17 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         sock_wrapper.send(mess)
         
         # Receive the latest copy of game data from the server
-        dataFrame = sock_wrapper.recv()
+        latestGame = sock_wrapper.recv()
         # WIP: Make sure what's received is a game data frame....
         # Decode bytestream into json data and convert it to dictionary
         # Update game params based on the latestGame data
         sync = latestGame['seq']
         if playerPaddle == "left":
+
             opponentPaddleObj.rect.x = latestGame['rpad'][0]
             opponentPaddleObj.rect.y = latestGame['rpad'][1]
         else:
+            
             opponentPaddleObj.rect.x = latestGame['lpad'][0]
             opponentPaddleObj.rect.y = latestGame['lpad'][1]
         ball.rect.x = latestGame['ball'][0]
@@ -262,9 +255,6 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     # Receive encoded data from the server
     byteStream = wClient.recv()
-    while (byteStream[0] != True) {
-        
-    }
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
