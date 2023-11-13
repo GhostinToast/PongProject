@@ -7,7 +7,6 @@
 # =================================================================================================
 
 
-
 #1.1.0- You can try running this (still untested)... It might work... maybe...
 import socket
 import threading
@@ -118,10 +117,12 @@ def main():
 
         clientNumber += 1
 
-
     server.close()
 
     for client in clientThreads:
         client.join()
 
     print('Server Closing')
+
+if __name__ == "__main__":
+    main()

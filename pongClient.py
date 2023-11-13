@@ -12,6 +12,8 @@ import sys
 import socket
 import json
 
+from socket_wrapper import sock_wrapper
+
 # Constants
 # IP of the host of the server. 
 # Ensure that the IP is the same as the pongServer.py.
@@ -241,13 +243,17 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     #Connect to server with specified host ip 
-    client.connect((HOST, PORT))
+    client.connect((ip, port))
+
+    # Wrap the client for send/receive handling
+    wClient = sock_wrapper(client)
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     # Receive encoded data from the server
-    byteStream = client.recv(1024)
-    # Decode bytestream into json data and convert it to dictionary
-    initData = json.loads(byteStream.decode)
+    byteStream = wClient.recv()
+    while (byteStream[0] != True) {
+        
+    }
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
@@ -256,7 +262,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
 
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
-    playGame(initData['screenwidth'], initData['screenheight'], initData['playerpaddle'], client)  # User will be either left or right paddle
+    playGame(480, 640, byteStream[1]['playerpaddle'], wClient)  # User will be either left or right paddle
     app.quit()         # Kills the window
 
 
@@ -296,7 +302,7 @@ if __name__ == "__main__":
     # Uncomment the line below if you want to play the game without a server to see how it should work
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
-    playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+    #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 
 
 # WIP: Just in case we need error handling for recv'ing
