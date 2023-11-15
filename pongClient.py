@@ -105,19 +105,14 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             'playerpaddlex': playerPaddleObj.rect.x,
             'playerpaddley': playerPaddleObj.rect.y,
 
-            # Opponent Paddle's x and y positions
-            'opponentpaddlex': opponentPaddleObj.rect.x,
-            'opponentpaddley': opponentPaddleObj.rect.y,
-
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
 
-            'playermov': "",
+            'playermov': playerPaddleObj.moving,
 
             # Scores
-            'playerScore': lScore,
-            'opponentScore': rScore
+            'score': [lScore,rScore]
         }
         mess = {
             'type': 'update',
@@ -207,23 +202,21 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         sock_wrapper.send(mess)
         
         # Receive the latest copy of game data from the server
-        latestGame = sock_wrapper.recv()
+        _, latestGame = sock_wrapper.recv()
         # WIP: Make sure what's received is a game data frame....
         # Decode bytestream into json data and convert it to dictionary
         # Update game params based on the latestGame data
+        #this should either get the highest sync or just grab the opponent's data
         sync = latestGame['seq']
-        if playerPaddle == "left":
-
-            opponentPaddleObj.rect.x = latestGame['rpad'][0]
-            opponentPaddleObj.rect.y = latestGame['rpad'][1]
-        else:
-            
-            opponentPaddleObj.rect.x = latestGame['lpad'][0]
-            opponentPaddleObj.rect.y = latestGame['lpad'][1]
-        ball.rect.x = latestGame['ball'][0]
-        ball.rect.y = latestGame['ball'][1]
+        opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
+        opponentPaddleObj.rect.y = latestGame['opponentpaddley']
+        ball.rect.x = latestGame['ballx']
+        ball.rect.y = latestGame['bally']
         lScore = latestGame['score'][0]
-        rScore = latestGame['lpad'][1]
+        rScore = latestGame['score'][1]
+        playerPaddleObj.rect.x = latestGame['playerpaddlex']
+        playerPaddleObj.rect.y = latestGame['playerpaddley']
+        playerPaddleObj.moving = latestGame['playermov']
 
         # =========================================================================================
 
@@ -251,10 +244,17 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
 
     # Wrap the client for send/receive handling
     wClient = sock_wrapper(client)
-
-    # Get the required information from your server (screen width, height & player paddle, "left or "right)
+    message = {
+        'type': 'start',
+        'data': False,
+        'playerpaddle': ''
+    }
+    # Get the required information from your server 
+    #this will trigger the start part of the client handler thread
     # Receive encoded data from the server
-    byteStream = wClient.recv()
+    while message['data'] != True:
+        wClient.send(message)
+        message = wClient.recv()
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
@@ -263,7 +263,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
 
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
-    playGame(480, 640, byteStream[1]['playerpaddle'], wClient)  # User will be either left or right paddle
+    playGame(480, 640, message[3]['playerpaddle'], wClient)  # User will be either left or right paddle
     app.quit()         # Kills the window
 
 
@@ -306,18 +306,3 @@ if __name__ == "__main__":
     #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 
 
-# WIP: Just in case we need error handling for recv'ing
-# Author:        Alexander Wise
-# Purpose:       Handles the receiving of encoded json dictionaries from the server.
-# Pre:           This method expects a client socket to be connected to a server that is sending data.
-# Post:          The method returns a dictionary or null.
-def fetchServer(clientSocket) -> dict:
-    # Arguments: 
-    # clientSocket  The socket of the client
-    try:
-        # Receive encoded data from the server
-        byteStream = socket.recv(1024)
-        # Decode bytestream into json data and convert it to dictionary
-        return json.loads(byteStream.decode)
-    except:
-        return None # And maybe some errors msgs...

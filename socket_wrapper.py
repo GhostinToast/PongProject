@@ -4,7 +4,7 @@ import json
 from typing import Tuple
 #wrapper class for sending and receiving data
 class sock_wrapper:
-    def__init__(self, clientSocket:socket.socket):
+    def __init__ (self, clientSocket:socket.socket):
         self.holder = clientSocket
         self.closed = False
     def send(self, data) -> Tuple[bool, dict]:
