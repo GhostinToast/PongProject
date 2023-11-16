@@ -15,19 +15,13 @@ import json
 from socket_wrapper import sock_wrapper
 
 # Constants
-# IP of the host of the server. 
-# Ensure that the IP is the same as the pongServer.py.
-HOST = "localhost"
-# Port # of the server. Set > 1023 for non-reserved ports. 
-# Ensure that the # is the same as the pongServer.py.
-PORT = 6000
 
 from assets.code.helperCode import *
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
-def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.socket) -> None:
+def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wrapper) -> None:
     
     # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
@@ -118,10 +112,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             'type': 'update',
             'data': dataFrame
         }
-        # Encode the frame as a json string
         
-        # Encode the string and finally send it to server
-        sock_wrapper.send(mess)
+        # Send the update to the server.
+        client.send(mess)
 
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
 
@@ -199,24 +192,26 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             'type': 'gimme',
             'data': dataFrame
         }
-        sock_wrapper.send(mess)
+
+        # Send a request for client update.
+        client.send(mess)
         
         # Receive the latest copy of game data from the server
-        _, latestGame = sock_wrapper.recv()
+        _, latestGame = client.recv()
         # WIP: Make sure what's received is a game data frame....
-        # Decode bytestream into json data and convert it to dictionary
-        # Update game params based on the latestGame data
-        #this should either get the highest sync or just grab the opponent's data
-        sync = latestGame['seq']
-        opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
-        opponentPaddleObj.rect.y = latestGame['opponentpaddley']
-        ball.rect.x = latestGame['ballx']
-        ball.rect.y = latestGame['bally']
-        lScore = latestGame['score'][0]
-        rScore = latestGame['score'][1]
-        playerPaddleObj.rect.x = latestGame['playerpaddlex']
-        playerPaddleObj.rect.y = latestGame['playerpaddley']
-        playerPaddleObj.moving = latestGame['playermov']
+        if latestGame != None:
+            # Update game params based on the latestGame data
+            #this should either get the highest sync or just grab the opponent's data
+            sync = latestGame['data']['seq']
+            opponentPaddleObj.rect.x = latestGame['data']['opponentpaddlex']
+            opponentPaddleObj.rect.y = latestGame['data']['opponentpaddley']
+            ball.rect.x = latestGame['data']['ballx']
+            ball.rect.y = latestGame['data']['bally']
+            lScore = latestGame['data']['score'][0]
+            rScore = latestGame['data']['score'][1]
+            playerPaddleObj.rect.x = latestGame['data']['playerpaddlex']
+            playerPaddleObj.rect.y = latestGame['data']['playerpaddley']
+            playerPaddleObj.moving = latestGame['data']['playermov']
 
         # =========================================================================================
 
@@ -240,11 +235,11 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     #Connect to server with specified host ip 
-    client.connect((ip, port))
+    client.connect((ip, int(port)))
 
     # Wrap the client for send/receive handling
     wClient = sock_wrapper(client)
-    message = {
+    initRequest = {
         'type': 'start',
         'data': False,
         'playerpaddle': ''
@@ -252,9 +247,12 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Get the required information from your server 
     #this will trigger the start part of the client handler thread
     # Receive encoded data from the server
-    while message['data'] != True:
-        wClient.send(message)
-        message = wClient.recv()
+    # wClient.send(initRequest)
+    # initRecieved , initData = wClient.recv()
+    # while not initRecieved or initData == None:
+    #     wClient.send(initRequest)
+    #     initRecieved , initData = wClient.recv()
+    initData = handshake(wClient, initRequest)
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
@@ -263,7 +261,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
 
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
-    playGame(480, 640, message[3]['playerpaddle'], wClient)  # User will be either left or right paddle
+    playGame(480, 640, initData['playerpaddle'], wClient)  # User will be either left or right paddle
     app.quit()         # Kills the window
 
 
@@ -297,6 +295,20 @@ def startScreen():
 
     app.mainloop()
 
+
+# Author:        Alexander Wise
+# Purpose:       Handles the receiving of tuples of encoded json dictionaries from the server.
+# Pre:           This method expects a wrapped client socket to be connected to a server that is sending/receiving data.
+# Post:          The method sends a request in the form of a dictionary, and waits for a valid dictionary tuple to return.
+def handshake(wSock:sock_wrapper, request:dict) -> dict:
+    wSock.send(request)
+    received , data = wSock.recv()
+    while not received or data == None:
+        wSock.send(request)
+        received , data = wSock.recv()
+    print("Hand shook.")
+    return data
+
 if __name__ == "__main__":
     startScreen()
     
@@ -304,5 +316,4 @@ if __name__ == "__main__":
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
     #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
-
 
