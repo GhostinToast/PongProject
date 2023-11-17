@@ -96,6 +96,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
             # Essentially the seq # for the frame
             'seq': sync,
+            'playerpaddlex': playerPaddleObj.rect.x,
+            'playerpaddley': playerPaddleObj.rect.y,
+            'playermov' : playerPaddleObj.moving,
 
             # Player Paddle's x and y position
             # these are server use only
@@ -124,22 +127,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         
   
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
-
-        player_update = pygame.time.get_ticks()
-        if player_update - last_play_time > play_interval:
-        # Your code to send updates to the server
-        # ...
-            updatePad = {
-            'playerpaddlex': playerPaddleObj.rect.x,
-            'playerpaddley': playerPaddleObj.rect.y,
-            'playermov' : playerPaddleObj.moving,
-            }
-            playpad = {
-            'type': 'playermov',
-            'data': updatePad
-            }
-            client.send(playpad)
-        last_play_time = player_update
         # Send the update to the server.
 
         # =========================================================================================
@@ -228,15 +215,26 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             if (sync < latestGame['data']['seq']):
                 ball.rect.x = latestGame['ballx']
                 ball.rect.y = latestGame['bally']
+                ball.updatePos()
                 lScore = latestGame['score'][0]
                 rScore = latestGame['score'][1]
-                playerPaddleObj.rect.x = latestGame['playerpaddlex']
-                playerPaddleObj.rect.y = latestGame['playerpaddley']
-                playerPaddleObj.moving = latestGame['playermov']
-            opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
-            opponentPaddleObj.rect.y = latestGame['opponentpaddley']
-            opponentPaddleObj.moving = latestGame['enemov']
-            ball.updatePos()
+                if playerPaddle == 'left':
+                    playerPaddleObj.rect.x = latestGame['lPaddlex']
+                    playerPaddleObj.rect.y = latestGame['lPaddley']
+                    playerPaddleObj.moving = latestGame['lPaddlemov']
+                elif playerPaddle == 'right':
+                    playerPaddleObj.rect.x = latestGame['rPaddlex']
+                    playerPaddleObj.rect.y = latestGame['rPaddley']
+                    playerPaddleObj.moving = latestGame['rPaddlemov']
+            if playerPaddle == 'left':
+                opponentPaddleObj.rect.x = latestGame['rPaddlex']
+                opponentPaddleObj.rect.y = latestGame['rPaddley']
+                opponentPaddleObj.moving = latestGame['rPaddlemov']
+            elif playerPaddle == 'right':
+                opponentPaddleObj.rect.x = latestGame['lPaddlex']
+                opponentPaddleObj.rect.y = latestGame['lPaddley']
+                opponentPaddleObj.moving = latestGame['lPaddlemov']
+            
         # =========================================================================================
 
 
