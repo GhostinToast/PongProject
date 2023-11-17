@@ -65,6 +65,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
     sync = 0
     last_update_time = 0
     update_interval = 50 
+    last_play_time = 0
+    play_interval = 5 
     while True:
         # Wiping the screen
         screen.fill((0,0,0))
@@ -103,11 +105,10 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             #didnt see the point of making a server df, so...
             'opponentpaddlex': 0,
             'opponentpaddley': 0,
-            'enemov': '',
+            'enemov': "",
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
-            'playermov': playerPaddleObj.moving,
 
             # Scores
             'score': [lScore,rScore]
@@ -129,6 +130,22 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         
   
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
+        updatePad = {
+            'playerpaddlex': playerPaddleObj.rect.x,
+            'playerpaddley': playerPaddleObj.rect.y,
+            'playermov' : playerPaddleObj.moving,
+        }
+        playpad = {
+            'type': 'update',
+            'data': updatePad
+        }
+        player_update = pygame.time.get_ticks()
+        if player_update - last_play_time > play_interval:
+        # Your code to send updates to the server
+        # ...
+            client.send(playpad)
+        last_play_time = player_update
+        # Send the update to the server.
 
         # =========================================================================================
 

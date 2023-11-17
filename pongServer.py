@@ -48,12 +48,12 @@ class gameSave:
         self.rPaddle_lock = threading.Lock()
         self.rPaddlex = 0 # X, Y, Moving
         self.rPaddley = 0
-        self.rPaddlemov = ''
+        self.rPaddlemov = ""
 
         self.lPaddle_lock = threading.Lock()
         self.lPaddlex = 0 # X, Y, Moving
         self.lPaddley = 0
-        self.lPaddlemov = ''
+        self.lPaddlemov = ""
 
         self.sync_lock = threading.Lock()
         self.sync = 0 # The current sync between the two clients
@@ -125,29 +125,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     Connection.send(newMessage)
                     print("sent update")
                 continue
-            if newMessage['type'] == 'update':
-                with game.sync_lock:
-                    if clientNumber == 0 and game.sync >= newMessage['data']['seq']:
-                        with game.lPaddle_lock:
-                            game.lPaddlex = newMessage['data']['playerpaddlex']
-                            game.lPaddley = newMessage['data']['playerpaddley']
-                            game.lPaddlemov = newMessage['data']['playermov']
-                            print("update recvd")
-                        continue
-                    elif clientNumber == 1 and game.sync >= newMessage['data']['seq']:
-                        with game.rPaddle_lock:
-                            game.rPaddlex = newMessage['data']['playerpaddlex']
-                            game.rPaddley = newMessage['data']['playerpaddley']
-                            game.rPaddlemov = newMessage['data']['playermov']
-                            print("update recvd")
-                        continue
-                with game.sync_lock:
-                    game.sync = newMessage['data']['seq']
-                with game.ball_lock:
-                    game.ballx = newMessage['data']['ballx']
-                    game.bally = newMessage['data']['bally']
-                with game.score_lock:
-                    game.score = newMessage['data']['score']
+            if newMessage['type'] == 'playermov':
                 if clientNumber == 0:
                     with game.lPaddle_lock:
                         game.lPaddlex = newMessage['data']['playerpaddlex']
@@ -158,6 +136,17 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                         game.rPaddlex = newMessage['data']['playerpaddlex']
                         game.rPaddley = newMessage['data']['playerpaddley']
                         game.rPaddlemov = newMessage['data']['playermov']
+                continue
+            if newMessage['type'] == 'update':
+                with game.sync_lock:
+                    if game.sync >= newMessage['data']['seq']:
+                        continue
+                    game.sync = newMessage['data']['seq']
+                with game.ball_lock:
+                    game.ballx = newMessage['data']['ballx']
+                    game.bally = newMessage['data']['bally']
+                with game.score_lock:
+                    game.score = newMessage['data']['score']
                 print("update recvd")
                 continue
             else:
