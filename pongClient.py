@@ -178,7 +178,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         pygame.draw.rect(screen, WHITE, topWall)
         pygame.draw.rect(screen, WHITE, bottomWall)
         scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
-        pygame.display.update([topWall, bottomWall, ball, leftPaddle, rightPaddle, scoreRect, winMessage])
+        pygame.display.update()
         clock.tick(60)
         
         # This number should be synchronized between you and your opponent.  If your number is larger
@@ -212,6 +212,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                 playerPaddleObj.moving = latestGame['data']['playermov']
             opponentPaddleObj.rect.x = latestGame['data']['opponentpaddlex']
             opponentPaddleObj.rect.y = latestGame['data']['opponentpaddley']
+            ball.updatePos()
         # =========================================================================================
 
 
