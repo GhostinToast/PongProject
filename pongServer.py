@@ -97,32 +97,74 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
 
             if newMessage['type'] == 'gimme':
                 if clientNumber == 0:
+                    dataFrame = {
+
+                    # Essentially the seq # for the frame
+                    'seq': 0,
+
+                    # Player Paddle's x and y positions
+                    'playerpaddlex': 0,
+                    'playerpaddley': 0,
+                    'playermov' : 0,
+                    # these are server use only
+                    #didnt see the point of making a server df, so...
+                    'opponentpaddlex': 0,
+                    'opponentpaddley': 0,
+                    'enemov': "",
+                    # Ball's x and y positions
+                    'ballx': 0,
+                    'bally': 0,
+
+                    # Scores
+                    'score': [0,0]
+                    }
                     with game.sync_lock:
-                        newMessage['data']['seq'] = game.sync
+                        dataFrame['seq'] = game.sync
                     with game.ball_lock:
-                        newMessage['data']['ballx'] = game.ballx
-                        newMessage['data']['bally'] = game.bally
+                        dataFrame['ballx'] = game.ballx
+                        dataFrame['bally'] = game.bally
                     with game.score_lock:
-                        newMessage['data']['score'] = game.score
+                        dataFrame['score'] = game.score
                     with game.rPaddle_lock:
-                        newMessage['data']['opponentpaddlex'] = game.rPaddlex
-                        newMessage['data']['opponentpaddley'] = game.rPaddley
-                        newMessage['data']['enemov'] = game.rPaddlemov
-                        Connection.send(newMessage)
+                        dataFrame['opponentpaddlex'] = game.rPaddlex
+                        dataFrame['opponentpaddley'] = game.rPaddley
+                        dataFrame['enemov'] = game.rPaddlemov
+                        Connection.send(dataFrame)
                         print("sent update")
                 elif clientNumber == 1:
+                    dataFrame = {
+
+                    # Essentially the seq # for the frame
+                    'seq': 0,
+
+                    # Player Paddle's x and y positions
+                    'playerpaddlex': 0,
+                    'playerpaddley': 0,
+                    'playermov' : 0,
+                    # these are server use only
+                    #didnt see the point of making a server df, so...
+                    'opponentpaddlex': 0,
+                    'opponentpaddley': 0,
+                    'enemov': "",
+                    # Ball's x and y positions
+                    'ballx': 0,
+                    'bally': 0,
+
+                    # Scores
+                    'score': [0,0]
+                    }
                     with game.sync_lock:
-                        newMessage['data']['seq'] = game.sync
+                        dataFrame['seq'] = game.sync
                     with game.ball_lock:
-                        newMessage['data']['ballx'] = game.ballx
-                        newMessage['data']['bally'] = game.bally
+                        dataFrame['ballx'] = game.ballx
+                        dataFrame['bally'] = game.bally
                     with game.score_lock:
-                        newMessage['data']['score'] = game.score
+                        dataFrame['score'] = game.score
                     with game.lPaddle_lock:
-                        newMessage['data']['opponentpaddlex'] = game.lPaddlex
-                        newMessage['data']['opponentpaddley'] = game.lPaddley
-                        newMessage['data']['enemov'] = game.lPaddlemov
-                    Connection.send(newMessage)
+                        dataFrame['opponentpaddlex'] = game.lPaddlex
+                        dataFrame['opponentpaddley'] = game.lPaddley
+                        dataFrame['enemov'] = game.lPaddlemov
+                    Connection.send(dataFrame)
                     print("sent update")
                 continue
             if newMessage['type'] == 'playermov':
@@ -137,17 +179,20 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                         game.rPaddley = newMessage['data']['playerpaddley']
                         game.rPaddlemov = newMessage['data']['playermov']
                 continue
-            if newMessage['type'] == 'update':
-                with game.sync_lock:
-                    if game.sync >= newMessage['data']['seq']:
-                        continue
+            elif newMessage['type'] == 'update':
+                game.sync_lock.acquire() 
+                if game.sync < newMessage['data']['seq']:
                     game.sync = newMessage['data']['seq']
-                with game.ball_lock:
-                    game.ballx = newMessage['data']['ballx']
-                    game.bally = newMessage['data']['bally']
-                with game.score_lock:
-                    game.score = newMessage['data']['score']
-                print("update recvd")
+                    game.sync_lock.release()
+                    with game.ball_lock:
+                        game.ballx = newMessage['data']['ballx']
+                        game.bally = newMessage['data']['bally']
+                    with game.score_lock:
+                        game.score = newMessage['data']['score']
+                    with game.ball_lock:
+                        game.ballx = newMessage['data']['ballx']
+                        game.bally = newMessage['data']['bally']
+                    print("update received")
                 continue
             else:
                 print(f"Unknown message type: {newMessage['type']}")
@@ -155,7 +200,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
             print(f"Client {clientNumber} disconnected unexpectedly.")
             shutDown.set()  # Set the shutdown flag
             Connection.close()  # Close the client socket
-
+    
 
 
 
