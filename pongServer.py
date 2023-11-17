@@ -124,6 +124,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['opponentpaddlex'] = game.rPaddlex
                             game.dataf['opponentpaddley'] = game.rPaddley
                             game.dataf['enemov'] = game.rPaddlemov
+                        with game.lPaddle_lock:
                             game.dataf['playerpaddlex'] = game.lPaddlex
                             game.dataf['playerpaddley'] = game.lPaddley
                             game.dataf['playermov'] = game.lPaddlemov
@@ -135,6 +136,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['opponentpaddlex'] = game.lPaddlex
                             game.dataf['opponentpaddley'] = game.lPaddley
                             game.dataf['enemov'] = game.lPaddlemov
+                        with game.rPaddle_lock:
                             game.dataf['playerpaddlex'] = game.rPaddlex
                             game.dataf['playerpaddley'] = game.rPaddley
                             game.dataf['playermov'] = game.rPaddlemov

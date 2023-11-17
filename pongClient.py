@@ -214,7 +214,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
         mess = {
-            'type': 'gimme'
+            'type': 'gimme',
+            'seq': sync
         }
 
         # Send a request for client update.
@@ -224,12 +225,13 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
-            ball.rect.x = latestGame['ballx']
-            ball.rect.y = latestGame['bally']
-            lScore = latestGame['score'][0]
-            rScore = latestGame['score'][1]
-            playerPaddleObj.rect.x = latestGame['playerpaddlex']
-            playerPaddleObj.rect.y = latestGame['playerpaddley']
+            if (sync < latestGame['data']['seq']):
+                ball.rect.x = latestGame['ballx']
+                ball.rect.y = latestGame['bally']
+                lScore = latestGame['score'][0]
+                rScore = latestGame['score'][1]
+                playerPaddleObj.rect.x = latestGame['playerpaddlex']
+                playerPaddleObj.rect.y = latestGame['playerpaddley']
             playerPaddleObj.moving = latestGame['playermov']
             opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
             opponentPaddleObj.rect.y = latestGame['opponentpaddley']
