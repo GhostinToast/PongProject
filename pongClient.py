@@ -224,16 +224,16 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
-            ball.rect.x = latestGame['data']['ballx']
-            ball.rect.y = latestGame['data']['bally']
-            lScore = latestGame['data']['score'][0]
-            rScore = latestGame['data']['score'][1]
-            playerPaddleObj.rect.x = latestGame['data']['playerpaddlex']
-            playerPaddleObj.rect.y = latestGame['data']['playerpaddley']
-            playerPaddleObj.moving = latestGame['data']['playermov']
-            opponentPaddleObj.rect.x = latestGame['data']['opponentpaddlex']
-            opponentPaddleObj.rect.y = latestGame['data']['opponentpaddley']
-            opponentPaddleObj.moving = latestGame['data']['enemov']
+            ball.rect.x = latestGame['ballx']
+            ball.rect.y = latestGame['bally']
+            lScore = latestGame['score'][0]
+            rScore = latestGame['score'][1]
+            playerPaddleObj.rect.x = latestGame['playerpaddlex']
+            playerPaddleObj.rect.y = latestGame['playerpaddley']
+            playerPaddleObj.moving = latestGame['playermov']
+            opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
+            opponentPaddleObj.rect.y = latestGame['opponentpaddley']
+            opponentPaddleObj.moving = latestGame['enemov']
             ball.updatePos()
         # =========================================================================================
 
