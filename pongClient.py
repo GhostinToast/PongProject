@@ -232,7 +232,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                 rScore = latestGame['score'][1]
                 playerPaddleObj.rect.x = latestGame['playerpaddlex']
                 playerPaddleObj.rect.y = latestGame['playerpaddley']
-            playerPaddleObj.moving = latestGame['playermov']
+                playerPaddleObj.moving = latestGame['playermov']
             opponentPaddleObj.rect.x = latestGame['opponentpaddlex']
             opponentPaddleObj.rect.y = latestGame['opponentpaddley']
             opponentPaddleObj.moving = latestGame['enemov']
