@@ -97,7 +97,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
 
             if newMessage['type'] == 'gimme':
                 if clientNumber == 0:
-                    dataFrame = {
+                    dataf = {
 
                     # Essentially the seq # for the frame
                     'seq': 0,
@@ -119,17 +119,17 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     'score': [0,0]
                     }
                     with game.sync_lock:
-                        dataFrame['seq'] = game.sync
+                        dataf['seq'] = game.sync
                     with game.ball_lock:
-                        dataFrame['ballx'] = game.ballx
-                        dataFrame['bally'] = game.bally
+                        dataf['ballx'] = game.ballx
+                        dataf['bally'] = game.bally
                     with game.score_lock:
-                        dataFrame['score'] = game.score
+                        dataf['score'] = game.score
                     with game.rPaddle_lock:
-                        dataFrame['opponentpaddlex'] = game.rPaddlex
-                        dataFrame['opponentpaddley'] = game.rPaddley
-                        dataFrame['enemov'] = game.rPaddlemov
-                        Connection.send(dataFrame)
+                        dataf['opponentpaddlex'] = game.rPaddlex
+                        dataf['opponentpaddley'] = game.rPaddley
+                        dataf['enemov'] = game.rPaddlemov
+                        Connection.send(dataf)
                         print("sent update")
                 elif clientNumber == 1:
                     dataFrame = {
