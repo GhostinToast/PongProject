@@ -69,99 +69,103 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
     Connection = sock_wrapper(clientSocket)
 
     while not shutDown.is_set() and not Connection.closed:
-        # Receive data from the client
-        _ , newMessage = Connection.recv()
+        try:
+            _ , newMessage = Connection.recv()
 
-        if newMessage is None:
-            break
+            if newMessage is None:
+                break
 
-        if newMessage['type'] == 'start':
-            if clientNumber == 0:
-                with game.lReady_lock:
-                    game.lReady = True
-                newMessage['playerpaddle'] = 'left'
+            if newMessage['type'] == 'start':
+                if clientNumber == 0:
+                    with game.lReady_lock:
+                        game.lReady = True
+                    newMessage['playerpaddle'] = 'left'
 
-            elif clientNumber == 1:
-                with game.rReady_lock:
-                    game.rReady = True
-                newMessage['playerpaddle'] = 'right'
+                elif clientNumber == 1:
+                    with game.rReady_lock:
+                        game.rReady = True
+                    newMessage['playerpaddle'] = 'right'
 
-            with game.lReady_lock, game.rReady_lock:
-                if game.lReady and game.rReady:
-                    newMessage['data'] = True
-                else:
-                    newMessage['data'] = False
-                Connection.send(newMessage)
-            continue
+                with game.lReady_lock, game.rReady_lock:
+                    if game.lReady and game.rReady:
+                        newMessage['data'] = True
+                    else:
+                        newMessage['data'] = False
+                    Connection.send(newMessage)
+                continue
 
-        if newMessage['type'] == 'gimme':
-            if clientNumber == 0:
-                with game.sync_lock:
-                    newMessage['data']['seq'] = game.sync
-                with game.ball_lock:
-                    newMessage['data']['ballx'] = game.ballx
-                    newMessage['data']['bally'] = game.bally
-                with game.score_lock:
-                    newMessage['data']['score'] = game.score
-                with game.rPaddle_lock:
-                    newMessage['data']['opponentpaddlex'] = game.rPaddlex
-                    newMessage['data']['opponentpaddley'] = game.rPaddley
+            if newMessage['type'] == 'gimme':
+                if clientNumber == 0:
+                    with game.sync_lock:
+                        newMessage['data']['seq'] = game.sync
+                    with game.ball_lock:
+                        newMessage['data']['ballx'] = game.ballx
+                        newMessage['data']['bally'] = game.bally
+                    with game.score_lock:
+                        newMessage['data']['score'] = game.score
+                    with game.rPaddle_lock:
+                        newMessage['data']['opponentpaddlex'] = game.rPaddlex
+                        newMessage['data']['opponentpaddley'] = game.rPaddley
+                        Connection.send(newMessage)
+                        print("sent update")
+                elif clientNumber == 1:
+                    with game.sync_lock:
+                        newMessage['data']['seq'] = game.sync
+                    with game.ball_lock:
+                        newMessage['data']['ballx'] = game.ballx
+                        newMessage['data']['bally'] = game.bally
+                    with game.score_lock:
+                        newMessage['data']['score'] = game.score
+                    with game.lPaddle_lock:
+                        newMessage['data']['opponentpaddlex'] = game.lPaddlex
+                        newMessage['data']['opponentpaddley'] = game.lPaddley
                     Connection.send(newMessage)
                     print("sent update")
-            elif clientNumber == 1:
-                with game.sync_lock:
-                    newMessage['data']['seq'] = game.sync
-                with game.ball_lock:
-                    newMessage['data']['ballx'] = game.ballx
-                    newMessage['data']['bally'] = game.bally
+                continue
+            if newMessage['type'] == 'score':
                 with game.score_lock:
-                    newMessage['data']['score'] = game.score
-                with game.lPaddle_lock:
-                    newMessage['data']['opponentpaddlex'] = game.lPaddlex
-                    newMessage['data']['opponentpaddley'] = game.lPaddley
-                Connection.send(newMessage)
-                print("sent update")
-            continue
-
-        if newMessage['type'] == 'update':
-            with game.sync_lock:
-                if clientNumber == 0 and game.sync >= newMessage['data']['seq']:
+                    game.score = newMessage['data']
+            if newMessage['type'] == 'update':
+                with game.sync_lock:
+                    if clientNumber == 0 and game.sync >= newMessage['data']['seq']:
+                        with game.lPaddle_lock:
+                            game.lPaddlex = newMessage['data']['playerpaddlex']
+                            game.lPaddley = newMessage['data']['playerpaddley']
+                            game.lPaddlemov = newMessage['data']['playermov']
+                            print("update recvd")
+                        continue
+                    elif clientNumber == 1 and game.sync >= newMessage['data']['seq']:
+                        with game.rPaddle_lock:
+                            game.rPaddlex = newMessage['data']['playerpaddlex']
+                            game.rPaddley = newMessage['data']['playerpaddley']
+                            game.rPaddlemov = newMessage['data']['playermov']
+                            print("update recvd")
+                        continue
+                with game.sync_lock:
+                    game.sync = newMessage['data']['seq']
+                with game.ball_lock:
+                    game.ballx = newMessage['data']['ballx']
+                    game.bally = newMessage['data']['bally']                    
+                if clientNumber == 0:
                     with game.lPaddle_lock:
                         game.lPaddlex = newMessage['data']['playerpaddlex']
                         game.lPaddley = newMessage['data']['playerpaddley']
                         game.lPaddlemov = newMessage['data']['playermov']
-                        print("update recvd")
-                    continue
-                elif clientNumber == 1 and game.sync >= newMessage['data']['seq']:
+                elif clientNumber == 1:
                     with game.rPaddle_lock:
                         game.rPaddlex = newMessage['data']['playerpaddlex']
                         game.rPaddley = newMessage['data']['playerpaddley']
                         game.rPaddlemov = newMessage['data']['playermov']
-                        print("update recvd")
-                    continue
-            with game.sync_lock:
-                game.sync = newMessage['data']['seq']
-            with game.ball_lock:
-                game.ballx = newMessage['data']['ballx']
-                game.bally = newMessage['data']['bally']
-            with game.score_lock:
-                game.score = newMessage['data']['score']
-                
-            if clientNumber == 0:
-                with game.lPaddle_lock:
-                    game.lPaddlex = newMessage['data']['playerpaddlex']
-                    game.lPaddley = newMessage['data']['playerpaddley']
-                    game.lPaddlemov = newMessage['data']['playermov']
-            elif clientNumber == 1:
-                with game.rPaddle_lock:
-                    game.rPaddlex = newMessage['data']['playerpaddlex']
-                    game.rPaddley = newMessage['data']['playerpaddley']
-                    game.rPaddlemov = newMessage['data']['playermov']
 
-            print("update recvd")
-            continue
-        else:
-            print(f"Unknown message type: {newMessage['type']}")
+                print("update recvd")
+                continue
+            else:
+                print(f"Unknown message type: {newMessage['type']}")
+        except ConnectionResetError:
+            print(f"Client {clientNumber} disconnected unexpectedly.")
+            shutDown.set()  # Set the shutdown flag
+            Connection.close()  # Close the client socket
+        
 
 
 
