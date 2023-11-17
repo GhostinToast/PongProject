@@ -20,7 +20,7 @@
 # =================================================================================================
 
 
-#1.1.0- You can try running this (still untested)... It might work... maybe...
+
 import socket
 import threading
 # used to encode to strings for the sending to and from server
@@ -63,6 +63,28 @@ class gameSave:
 
         self.rReady_lock = threading.Lock()
         self.rReady = False # is the right player ready to start?
+        self.df_lock = threading.Lock()
+        self.df = {
+
+                    # Essentially the seq # for the frame
+                    'seq': self.sync,
+
+                    # Player Paddle's x and y positions
+                    'playerpaddlex': 0,
+                    'playerpaddley': 0,
+                    'playermov' : "",
+                
+                    'opponentpaddlex': 0,
+                    'opponentpaddley': 0,
+                    'enemov': "",
+                    # Ball's x and y positions
+                    'ballx': self.ballx,
+                    'bally': self.bally,
+
+                    # Scores
+                    'score': self.score
+                    }
+
 
 
 def clientControl(shutDown, game, clientSocket, clientNumber):
@@ -97,75 +119,21 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
 
             if newMessage['type'] == 'gimme':
                 if clientNumber == 0:
-                    dataf = {
-
-                    # Essentially the seq # for the frame
-                    'seq': 0,
-
-                    # Player Paddle's x and y positions
-                    'playerpaddlex': 0,
-                    'playerpaddley': 0,
-                    'playermov' : 0,
-                    # these are server use only
-                    #didnt see the point of making a server df, so...
-                    'opponentpaddlex': 0,
-                    'opponentpaddley': 0,
-                    'enemov': "",
-                    # Ball's x and y positions
-                    'ballx': 0,
-                    'bally': 0,
-
-                    # Scores
-                    'score': [0,0]
-                    }
-                    with game.sync_lock:
-                        dataf['seq'] = game.sync
-                    with game.ball_lock:
-                        dataf['ballx'] = game.ballx
-                        dataf['bally'] = game.bally
-                    with game.score_lock:
-                        dataf['score'] = game.score
-                    with game.rPaddle_lock:
-                        dataf['opponentpaddlex'] = game.rPaddlex
-                        dataf['opponentpaddley'] = game.rPaddley
-                        dataf['enemov'] = game.rPaddlemov
-                        Connection.send(dataf)
-                        print("sent update")
-                elif clientNumber == 1:
-                    dataFrame = {
-
-                    # Essentially the seq # for the frame
-                    'seq': 0,
-
-                    # Player Paddle's x and y positions
-                    'playerpaddlex': 0,
-                    'playerpaddley': 0,
-                    'playermov' : 0,
-                    # these are server use only
-                    #didnt see the point of making a server df, so...
-                    'opponentpaddlex': 0,
-                    'opponentpaddley': 0,
-                    'enemov': "",
-                    # Ball's x and y positions
-                    'ballx': 0,
-                    'bally': 0,
-
-                    # Scores
-                    'score': [0,0]
-                    }
-                    with game.sync_lock:
-                        dataFrame['seq'] = game.sync
-                    with game.ball_lock:
-                        dataFrame['ballx'] = game.ballx
-                        dataFrame['bally'] = game.bally
-                    with game.score_lock:
-                        dataFrame['score'] = game.score
-                    with game.lPaddle_lock:
-                        dataFrame['opponentpaddlex'] = game.lPaddlex
-                        dataFrame['opponentpaddley'] = game.lPaddley
-                        dataFrame['enemov'] = game.lPaddlemov
-                    Connection.send(dataFrame)
-                    print("sent update")
+                    with game.df_lock :
+                        with game.rPaddle_lock:
+                            game.dataf['opponentpaddlex'] = game.rPaddlex
+                            game.dataf['opponentpaddley'] = game.rPaddley
+                            game.dataf['enemov'] = game.rPaddlemov
+                    Connection.send(game.dataf)
+                    print("sent gimme")
+                if clientNumber == 0:
+                    with game.df_lock:
+                        with game.lPaddle_lock:
+                            game.dataf['opponentpaddlex'] = game.lPaddlex
+                            game.dataf['opponentpaddley'] = game.lPaddley
+                            game.dataf['enemov'] = game.lPaddlemov
+                    Connection.send(game.dataf)
+                    print("sent gimme")
                 continue
             if newMessage['type'] == 'playermov':
                 if clientNumber == 0:
@@ -193,6 +161,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                         game.ballx = newMessage['data']['ballx']
                         game.bally = newMessage['data']['bally']
                     print("update received")
+                else:
+                    game.sync_lock.release()
                 continue
             else:
                 print(f"Unknown message type: {newMessage['type']}")
