@@ -25,11 +25,11 @@ class sock_wrapper:
             info = self.holder.recv(1024).decode()
             jsinfo = json.loads(info)
         except socket.error as e:
-            print('New error: ', e)
+            print('socket error: ', e)
             self.close()
             return False, None
         except json.JSONDecodeError as e:
-            print('error: ', e)
+            print('JSON decoding error: ', e)
             return False, None
         except UnicodeDecodeError as e:
             print('error: ', e)
@@ -38,4 +38,3 @@ class sock_wrapper:
     def close(self) -> bool:
         self.holder.close()
         self.closed = True
-    
