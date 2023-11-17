@@ -40,8 +40,8 @@ PORT = 5000
 class gameSave:
     def __init__(self):
         self.ball_lock = threading.Lock()
-        self.ball = [0,0] # X, Y
-
+        self.ballx = 0 # X, Y
+        self.bally = 0
         self.score_lock = threading.Lock()
         self.score = [0,0] # lScore, rScore
 
@@ -95,8 +95,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 with game.sync_lock:
                     newMessage['data']['seq'] = game.sync
                 with game.ball_lock:
-                    newMessage['data']['ballx'] = game.ball[0]
-                    newMessage['data']['bally'] = game.ball[0]
+                    newMessage['data']['ballx'] = game.ballx
+                    newMessage['data']['bally'] = game.bally
                 with game.score_lock:
                     newMessage['data']['score'] = game.score
                 with game.rPaddle_lock:
@@ -107,8 +107,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     if game.sync > newMessage['data']['seq']:
                         newMessage['data']['seq'] = game.sync
                 with game.ball_lock:
-                    newMessage['data']['ballx'] = game.ball[0]
-                    newMessage['data']['bally'] = game.ball[0]
+                    newMessage['data']['ballx'] = game.ballx
+                    newMessage['data']['bally'] = game.bally
                 with game.score_lock:
                     newMessage['data']['score'] = game.score
                 with game.lPaddle_lock:
@@ -131,8 +131,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                         game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
                     continue
                 with game.ball_lock:
-                    game.ball = newMessage['data']['ballx']
-                    game.ball = newMessage['data']['bally']
+                    game.ballx = newMessage['data']['ballx']
+                    game.bally = newMessage['data']['bally']
                 with game.score_lock:
                     game.score = newMessage['data']['score']
                 
