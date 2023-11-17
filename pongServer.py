@@ -62,135 +62,87 @@ class gameSave:
 
 
 def clientControl(shutDown, game, clientSocket, clientNumber):
-    
     Connection = sock_wrapper(clientSocket)
 
     while not shutDown.is_set() and not Connection.closed:
-        
         # Receive data from the client
         _ , newMessage = Connection.recv()
 
         if newMessage is None:
             break
+
         if newMessage['type'] == 'start':
-            
             if clientNumber == 0:
-                game.lReady_lock.acquire()
-                game.lReady = True
-                game.lReady_lock.release()
+                with game.lReady_lock:
+                    game.lReady = True
                 newMessage['playerpaddle'] = 'left'
-                
+
             elif clientNumber == 1:
-                game.rReady_lock.acquire()
-                game.rReady = True
-                game.rReady_lock.release()
-                newMessage['playerpaddle'] = 'left'
+                with game.rReady_lock:
+                    game.rReady = True
+                newMessage['playerpaddle'] = 'right'
 
-            game.rReady_lock.acquire()
-            game.lReady_lock.acquire()    
-            if game.lReady and game.rReady:
-                newMessage['data'] = 'True'
+            with game.lReady_lock, game.rReady_lock:
+                if game.lReady and game.rReady:
+                    newMessage['data'] = True
+                else:
+                    newMessage['data'] = False
                 Connection.send(newMessage)
-                game.rReady_lock.release()
-                game.lReady_lock.release() 
-                continue
+            continue
 
-            else:
-                newMessage['data'] = False
-                Connection.send(newMessage)
-                game.rReady_lock.release()
-                game.lReady_lock.release()
-                continue
-        #check if right side is connected
-        #check if left side is connected
-        #if so, send "yes", else "no"
         if newMessage['type'] == 'gimme':
-            if clientNumber == 0: #left side is connected
-                    game.sync_lock.acquire()
+            if clientNumber == 0:
+                with game.sync_lock:
                     newMessage['data']['seq'] = game.sync
-                    game.sync_lock.release()
-                    game.ball_lock.aquire()
+                with game.ball_lock:
                     newMessage['data']['ball'] = game.ball
-                    game.ball_lock.release()
-                    game.score_lock.aquire()
-                    newMessage['data']['score'] = game.score # lScore, rScore
-                    game.score_lock.release()
-                    game.rPaddle_lock.aquire()
+                with game.score_lock:
+                    newMessage['data']['score'] = game.score
+                with game.rPaddle_lock:
                     newMessage['data']['opponentpaddlex'] = game.rPaddle[0]
-                    newMessage['data']['opponentpaddley'] = game.rPaddle[1]# X, Y, Moving
-                    game.rPaddle_lock.release()
-
-        
-            if clientNumber == 1: #left side is connected
-                game.sync_lock.acquire()
-                if game.sync > newMessage['data']['seq']:
-                    newMessage['data']['seq'] = game.sync
-                    game.sync_lock.release()
-                    game.ball_lock.aquire()
+                    newMessage['data']['opponentpaddley'] = game.rPaddle[1]
+            elif clientNumber == 1:
+                with game.sync_lock:
+                    if game.sync > newMessage['data']['seq']:
+                        newMessage['data']['seq'] = game.sync
+                with game.ball_lock:
                     newMessage['data']['ball'] = game.ball
-                    game.ball_lock.release()
-                    game.score_lock.aquire()
-                    newMessage['data']['score'] = game.score # lScore, rScore
-                    game.score_lock.release()
-                    game.lPaddle_lock.aquire()
+                with game.score_lock:
+                    newMessage['data']['score'] = game.score
+                with game.lPaddle_lock:
                     newMessage['data']['opponentpaddlex'] = game.lPaddle[0]
-                    newMessage['data']['opponentpaddley'] = game.lPaddle[1]# X, Y, Moving
-                    game.lPaddle_lock.release()
+                    newMessage['data']['opponentpaddley'] = game.lPaddle[1]
+
             Connection.send(newMessage)
             continue
 
-
-               
         if newMessage['type'] == 'update':
-            if clientNumber == 0: #left side is connected
-                game.sync_lock.acquire()
-                if game.sync > newMessage['data']['seq']:
-                    game.sync_lock.release()
-                    game.lPaddle_lock.acquire()
-                    game.lPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
-                    game.lPaddle_lock.release()
-                    continue
-                game.sync = newMessage['data']['seq']
-                game.sync_lock.release()
-                game.lPaddle_lock.acquire()
-                game.lPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
-                game.lPaddle_lock.release()
-                game.ball_lock.aquire()
-                game.ball = newMessage['data']['ball']
-                game.ball_lock.release()
-                game.score_lock.aquire()
-                game.score = newMessage['data']['score'] # lScore, rScore
-                game.score_lock.release()
-                game.rPaddle_lock.aquire()
-                game.rPaddle[0] = newMessage['data']['opponentpaddlex']
-                game.rPaddle[1] = newMessage['data']['opponentpaddley'] # X, Y, Moving
-                game.rPaddle_lock.release()
-            if clientNumber == 1: #right side is connected:
-                game.sync_lock.acquire()
-                if game.sync > newMessage['data']['seq']:
-                    game.sync_lock.release()
-                    game.rPaddle_lock.acquire()
-                    game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
-                    game.rPaddle_lock.release()
-                    continue
-                game.sync = newMessage['data']['seq']
-                game.sync_lock.release()
-                game.rPaddle_lock.acquire()
-                game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
-                game.rPaddle_lock.release()
-                game.ball_lock.aquire()
-                game.ball = newMessage['data']['ball']
-                game.ball_lock.release()
-                game.score_lock.aquire()
-                game.score = newMessage['data']['score'] # lScore, rScore
-                game.score_lock.release()
-                game.lPaddle_lock.aquire()
-                game.lPaddle[0] = newMessage['data']['opponentpaddlex']
-                game.lPaddle[1] = newMessage['data']['opponentpaddley'] # X, Y, Moving
-                game.lPaddle_lock.release()
+            with game.sync_lock:
+                if clientNumber == 0 and game.sync <= newMessage['data']['seq']:
+                    game.sync = newMessage['data']['seq']
+                    with game.lPaddle_lock:
+                        game.lPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
+                elif clientNumber == 1 and game.sync <= newMessage['data']['seq']:
+                    game.sync = newMessage['data']['seq']
+                    with game.rPaddle_lock:
+                        game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
+
+                with game.ball_lock:
+                    game.ball = newMessage['data']['ball']
+                with game.score_lock:
+                    game.score = newMessage['data']['score']
+                
+                if clientNumber == 0:
+                    with game.rPaddle_lock:
+                        game.rPaddle[0] = newMessage['data']['opponentpaddlex']
+                        game.rPaddle[1] = newMessage['data']['opponentpaddley']
+                elif clientNumber == 1:
+                    with game.lPaddle_lock:
+                        game.lPaddle[0] = newMessage['data']['opponentpaddlex']
+                        game.lPaddle[1] = newMessage['data']['opponentpaddley']
 
             Connection.send(newMessage)
-            continue
+
 
 
 
@@ -224,14 +176,17 @@ def main():
         # Create a new thread for each client
         newThread = threading.Thread(target=clientControl, args=(endServer, gameState, newClient, clientNum))
         newThread.start()
-
+        clientThreads.append(newThread)  # Store the thread reference in the list
         clientNum += 1
 
     server.close()
 
+    # Join all client threads for proper termination
     for client in clientThreads:
         client.join()
 
+
+  
     print('Server Closing')
 
 if __name__ == "__main__": 
