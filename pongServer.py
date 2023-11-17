@@ -149,17 +149,12 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     game.lPaddlex = newMessage['data']['playerpaddlex']
                     game.lPaddley = newMessage['data']['playerpaddley']
                     game.lPaddlemov = newMessage['data']['playermov']
-                with game.rPaddle_lock:
-                    game.rPaddlex = newMessage['data']['opponentpaddlex']
-                    game.rPaddley = newMessage['data']['opponentpaddley']
             elif clientNumber == 1:
                 with game.rPaddle_lock:
                     game.rPaddlex = newMessage['data']['playerpaddlex']
                     game.rPaddley = newMessage['data']['playerpaddley']
                     game.rPaddlemov = newMessage['data']['playermov']
-                with game.lPaddle_lock:
-                    game.lPaddlex = newMessage['data']['opponentpaddlex']
-                    game.lPaddley = newMessage['data']['opponentpaddley']
+
             print("update recvd")
             continue
         else:
