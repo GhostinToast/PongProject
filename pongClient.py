@@ -98,7 +98,10 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             # Player Paddle's x and y positions
             'playerpaddlex': playerPaddleObj.rect.x,
             'playerpaddley': playerPaddleObj.rect.y,
-
+            # these are server use only
+            #didnt see the point of making a server df, so...
+            'opponentpaddlex': 0,
+            'opponentpaddley': 0,
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
@@ -194,10 +197,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         }
 
         # Send a request for client update.
-        client.send(mess)
-        
+        latestGame = handshake(client, mess)
         # Receive the latest copy of game data from the server
-        _, latestGame = client.recv()
         # WIP: Make sure what's received is a game data frame....
         if latestGame != None:
             # Update game params based on the latestGame data
@@ -229,13 +230,19 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # port          A string holding the port the server is using
     # errorLabel    A tk label widget, modify it's text to display messages to the user (example below)
     # app           The tk window object, needed to kill the window
-    
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        #Connect to server with specified host ip
+        client.connect((ip, int(port)))
+    except (ConnectionRefusedError, socket.error) as e:
+        print(f"Connection error: {e}")
+        errorLabel.config(text="Connection error. Please check the server.")
+        errorLabel.update()
+        return
+
     
-    #Connect to server with specified host ip 
-    client.connect((ip, int(port)))
 
     # Wrap the client for send/receive handling
     wClient = sock_wrapper(client)
@@ -244,24 +251,15 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
         'data': False,
         'playerpaddle': ''
     }
-    # Get the required information from your server 
-    #this will trigger the start part of the client handler thread
-    # Receive encoded data from the server
-    # wClient.send(initRequest)
-    # initRecieved , initData = wClient.recv()
-    # while not initRecieved or initData == None:
-    #     wClient.send(initRequest)
-    #     initRecieved , initData = wClient.recv()
-    initData = handshake(wClient, initRequest)
-
+    while initRequest['data'] != True: 
+        initRequest = handshake(wClient, initRequest)
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
-    # You may or may not need to call this, depending on how many times you update the label
     errorLabel.update()     
 
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
-    playGame(480, 640, initData['playerpaddle'], wClient)  # User will be either left or right paddle
+    playGame(480, 640, initRequest['playerpaddle'], wClient)  # User will be either left or right paddle
     app.quit()         # Kills the window
 
 
