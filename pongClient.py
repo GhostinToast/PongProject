@@ -213,11 +213,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
             if (sync < latestGame['data']['seq']):
+                lScore = latestGame['score'][0]
+                rScore = latestGame['score'][1]
                 ball.rect.x = latestGame['ballx']
                 ball.rect.y = latestGame['bally']
                 ball.updatePos()
-                lScore = latestGame['score'][0]
-                rScore = latestGame['score'][1]
                 if playerPaddle == 'left':
                     playerPaddleObj.rect.x = latestGame['lPaddlex']
                     playerPaddleObj.rect.y = latestGame['lPaddley']
@@ -234,6 +234,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                 opponentPaddleObj.rect.x = latestGame['lPaddlex']
                 opponentPaddleObj.rect.y = latestGame['lPaddley']
                 opponentPaddleObj.moving = latestGame['lPaddlemov']
+
             
         # =========================================================================================
 
@@ -274,6 +275,8 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     }
     while initRequest['data'] != True: 
         initRequest = handshake(wClient, initRequest)
+
+
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
     errorLabel.update()     

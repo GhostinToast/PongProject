@@ -118,42 +118,43 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 continue
 
             if newMessage['type'] == 'gimme':
+                print(game.dataf)
                 Connection.send(game.dataf)
                 continue
             
             elif newMessage['type'] == 'update':
                 game.sync_lock.acquire() 
-                if game.sync < newMessage['data']['seq']:
-                    game.sync = newMessage['data']['seq']
+                if game.dataf['seq'] < newMessage['data']['seq']:
+                    game.dataf['seq'] = newMessage['data']['seq']
                     game.sync_lock.release()
                     with game.ball_lock:
-                        game.ballx = newMessage['data']['ballx']
-                        game.bally = newMessage['data']['bally']
+                        game.dataf['ballx'] = newMessage['data']['ballx']
+                        game.dataf['bally'] = newMessage['data']['bally']
                     with game.score_lock:
-                        game.score = newMessage['data']['score']
+                        game.dataf['score'] = newMessage['data']['score']
                     if clientNumber == 0:
                         with game.lPaddle_lock:
-                            game.lPaddlex = newMessage['data']['playerpaddlex']
-                            game.lPaddley = newMessage['data']['playerpaddley']
-                            game.lPaddlemov = newMessage['data']['playermov']
+                            game.dataf['lPaddlex'] = newMessage['data']['playerpaddlex']
+                            game.dataf['lPaddley'] = newMessage['data']['playerpaddley']
+                            game.dataf['lPaddlemov'] = newMessage['data']['playermov']
                     elif clientNumber == 1:
                         with game.rPaddle_lock:
-                            game.rPaddlex = newMessage['data']['playerpaddlex']
-                            game.rPaddley = newMessage['data']['playerpaddley']
-                            game.rPaddlemov = newMessage['data']['playermov']
+                            game.dataf['rPaddlex'] = newMessage['data']['playerpaddlex']
+                            game.dataf['rPaddley'] = newMessage['data']['playerpaddley']
+                            game.dataf['rPaddlemov'] = newMessage['data']['playermov']
                     print("update received")
                 else:
                     game.sync_lock.release()
                     if clientNumber == 0:
                         with game.lPaddle_lock:
-                            game.lPaddlex = newMessage['data']['playerpaddlex']
-                            game.lPaddley = newMessage['data']['playerpaddley']
-                            game.lPaddlemov = newMessage['data']['playermov']
+                            game.dataf['lPaddlex'] = newMessage['data']['playerpaddlex']
+                            game.dataf['lPaddley'] = newMessage['data']['playerpaddley']
+                            game.dataf['lPaddlemov'] = newMessage['data']['playermov']
                     elif clientNumber == 1:
                         with game.rPaddle_lock:
-                            game.rPaddlex = newMessage['data']['playerpaddlex']
-                            game.rPaddley = newMessage['data']['playerpaddley']
-                            game.rPaddlemov = newMessage['data']['playermov']
+                            game.dataf['rPaddlex'] = newMessage['data']['playerpaddlex']
+                            game.dataf['rPaddley'] = newMessage['data']['playerpaddley']
+                            game.dataf['rPaddlemov'] = newMessage['data']['playermov']
                 continue
             else:
                 print(f"Unknown message type: {newMessage['type']}")
