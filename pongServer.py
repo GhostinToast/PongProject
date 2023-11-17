@@ -124,6 +124,9 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['opponentpaddlex'] = game.rPaddlex
                             game.dataf['opponentpaddley'] = game.rPaddley
                             game.dataf['enemov'] = game.rPaddlemov
+                            game.dataf['playerpaddlex'] = game.lPaddlex
+                            game.dataf['playerpaddley'] = game.lPaddley
+                            game.dataf['playermov'] = game.lPaddlemov
                     Connection.send(game.dataf)
                     print("sent gimme")
                 if clientNumber == 0:
@@ -132,6 +135,9 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['opponentpaddlex'] = game.lPaddlex
                             game.dataf['opponentpaddley'] = game.lPaddley
                             game.dataf['enemov'] = game.lPaddlemov
+                            game.dataf['playerpaddlex'] = game.rPaddlex
+                            game.dataf['playerpaddley'] = game.rPaddley
+                            game.dataf['playermov'] = game.rPaddlemov
                     Connection.send(game.dataf)
                     print("sent gimme")
                 continue
