@@ -1,3 +1,9 @@
+# =================================================================================================
+# Contributing Authors:	    Alexander Wise, Ruby Harris
+# Email Addresses:          Alex.Wise@uky.edu, Ruby.Harris@uky.edu
+# Date:                     11/17/2023
+# Purpose:                  Simplifies the connection code
+# =================================================================================================
 
 import socket
 import json

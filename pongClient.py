@@ -1,9 +1,8 @@
 # =================================================================================================
-# Contributing Authors:	    Alexander Wise,
-# Email Addresses:          Alex.Wise@uky.edu,
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
-# Misc:                     <Not Required.  Anything else you might want to include>
+# Contributing Authors:	    Alexander Wise, Ruby Harris and Michaela Winfree
+# Email Addresses:          Alex.Wise@uky.edu, Ruby.Harris@uky.edu, Michaela.Winfree@uky.edu
+# Date:                     11/17/2023
+# Purpose:                  Runs the game on each client computer
 # =================================================================================================
 
 import pygame

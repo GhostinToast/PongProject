@@ -1,7 +1,7 @@
 # =================================================================================================
 # Contributing Authors:	    Alexander Wise, Ruby Harris and Michaela Winfree
-# Email Addresses:          Alex.Wise@uky.edu,
-# Date:                     11/16/2023
+# Email Addresses:          Alex.Wise@uky.edu, Ruby.Harris@uky.edu, Michaela.Winfree@uky.edu
+# Date:                     11/17/2023
 # Purpose:                  This is the server file for the game of pong. It creates a server and 
 #                               updates client game instances through sockets and threads.
 # Misc:                     To test this program on a single machine:
