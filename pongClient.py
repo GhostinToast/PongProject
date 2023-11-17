@@ -18,22 +18,24 @@ from socket_wrapper import sock_wrapper
 
 from assets.code.helperCode import *
 # Efficient resource loading - Load resources once outside the game loop
-WHITE = (255,255,255)
-pointSound = pygame.mixer.Sound("./assets/sounds/point.wav")
-bounceSound = pygame.mixer.Sound("./assets/sounds/bounce.wav")
-scoreFont = pygame.font.Font("./assets/fonts/pong-score.ttf", 32)
-winFont = pygame.font.Font("./assets/fonts/visitor.ttf", 48)
+
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wrapper) -> None:
     
-    # Pygame inits
+   # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
 
     # Constants
+    WHITE = (255,255,255)
     clock = pygame.time.Clock()
+    scoreFont = pygame.font.Font("./assets/fonts/pong-score.ttf", 32)
+    winFont = pygame.font.Font("./assets/fonts/visitor.ttf", 48)
+    pointSound = pygame.mixer.Sound("./assets/sounds/point.wav")
+    bounceSound = pygame.mixer.Sound("./assets/sounds/bounce.wav")
+
     # Display objects
     screen = pygame.display.set_mode((screenWidth, screenHeight))
     winMessage = pygame.Rect(0,0,0,0)
