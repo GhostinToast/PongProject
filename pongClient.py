@@ -63,7 +63,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
     lScore = 0
     rScore = 0
     sync = 0
-
+    last_update_time = 0
+    update_interval = 100 
     while True:
         # Wiping the screen
         screen.fill((0,0,0))
@@ -112,9 +113,17 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             'type': 'update',
             'data': dataFrame
         }
-        
+
+
+   
+        current_time = pygame.time.get_ticks()
+        if current_time - last_update_time > update_interval:
+        # Your code to send updates to the server
+        # ...
+            client.send(mess)
+        last_update_time = current_time
         # Send the update to the server.
-        client.send(mess)
+        
 
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
 
