@@ -140,7 +140,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                     paddle.rect.y -= paddle.speed
 
         # If the game is over, display the win message
-        if lScore > 4 or rScore > 4:
+        if lScore > 40 or rScore > 40:
             winText = "Player 1 Wins! " if lScore > 4 else "Player 2 Wins! "
             textSurface = winFont.render(winText, False, WHITE, (0,0,0))
             textRect = textSurface.get_rect()
@@ -211,7 +211,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
-            if (sync < latestGame['seq']):
+            if (sync + 5 < latestGame['seq']):
                 lScore = latestGame['score'][0]
                 rScore = latestGame['score'][1]
                 ball.rect.x = latestGame['ballx']
@@ -256,7 +256,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         #Connect to server with specified host ip
-        client.connect(('localhost', 6000))
+        client.connect((ip, 6000))
     except (ConnectionRefusedError, socket.error) as e:
         print(f"Connection error: {e}")
         errorLabel.config(text="Connection error. Please check the server.")
