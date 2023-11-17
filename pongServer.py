@@ -46,10 +46,14 @@ class gameSave:
         self.score = [0,0] # lScore, rScore
 
         self.rPaddle_lock = threading.Lock()
-        self.rPaddle = [0,0,''] # X, Y, Moving
+        self.rPaddlex = 0 # X, Y, Moving
+        self.rPaddley = 0
+        self.rPaddlemov = ''
 
         self.lPaddle_lock = threading.Lock()
-        self.lPaddle = [0,0,''] # X, Y, Moving
+        self.lPaddlex = 0 # X, Y, Moving
+        self.lPaddley = 0
+        self.lPaddlemov = ''
 
         self.sync_lock = threading.Lock()
         self.sync = 0 # The current sync between the two clients
@@ -100,8 +104,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 with game.score_lock:
                     newMessage['data']['score'] = game.score
                 with game.rPaddle_lock:
-                    newMessage['data']['opponentpaddlex'] = game.rPaddle[0]
-                    newMessage['data']['opponentpaddley'] = game.rPaddle[1]
+                    newMessage['data']['opponentpaddlex'] = game.rPaddlex
+                    newMessage['data']['opponentpaddley'] = game.rPaddley
             elif clientNumber == 1:
                 with game.sync_lock:
                     if game.sync > newMessage['data']['seq']:
@@ -112,8 +116,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 with game.score_lock:
                     newMessage['data']['score'] = game.score
                 with game.lPaddle_lock:
-                    newMessage['data']['opponentpaddlex'] = game.lPaddle[0]
-                    newMessage['data']['opponentpaddley'] = game.lPaddle[1]
+                    newMessage['data']['opponentpaddlex'] = game.lPaddlex
+                    newMessage['data']['opponentpaddley'] = game.lPaddley
 
             Connection.send(newMessage)
             continue
@@ -123,13 +127,16 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 if clientNumber == 0 and game.sync > newMessage['data']['seq']:
                     game.sync = newMessage['data']['seq']
                     with game.lPaddle_lock:
-                        game.lPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
+                        game.lPaddlex = newMessage['data']['playerpaddlex']
+                        game.lPaddley = newMessage['data']['playerpaddley']
+                        game.lPaddlemov = newMessage['data']['playermov']
                     continue
                 elif clientNumber == 1 and game.sync > newMessage['data']['seq']:
                     game.sync = newMessage['data']['seq']
                     with game.rPaddle_lock:
-                        game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
-                    continue
+                        game.rPaddlex = newMessage['data']['playerpaddlex']
+                        game.rPaddley = newMessage['data']['playerpaddley']
+                        game.rPaddlemov = newMessage['data']['playermov']
                 with game.ball_lock:
                     game.ballx = newMessage['data']['ballx']
                     game.bally = newMessage['data']['bally']
@@ -138,16 +145,20 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 
                 if clientNumber == 0:
                     with game.lPaddle_lock:
-                        game.lPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
+                        game.lPaddlex = newMessage['data']['playerpaddlex']
+                        game.lPaddley = newMessage['data']['playerpaddley']
+                        game.lPaddlemov = newMessage['data']['playermov']
                     with game.rPaddle_lock:
-                        game.rPaddle[0] = newMessage['data']['opponentpaddlex']
-                        game.rPaddle[1] = newMessage['data']['opponentpaddley']
+                        game.rPaddlex = newMessage['data']['opponentpaddlex']
+                        game.rPaddley = newMessage['data']['opponentpaddley']
                 elif clientNumber == 1:
                     with game.rPaddle_lock:
-                        game.rPaddle = newMessage['data']['playerpaddlex'], newMessage['data']['playerpaddley'], newMessage['data']['playermov']
+                        game.rPaddlex = newMessage['data']['playerpaddlex']
+                        game.rPaddley = newMessage['data']['playerpaddley']
+                        game.rPaddlemov = newMessage['data']['playermov']
                     with game.lPaddle_lock:
-                        game.lPaddle[0] = newMessage['data']['opponentpaddlex']
-                        game.lPaddle[1] = newMessage['data']['opponentpaddley']
+                        game.lPaddlex = newMessage['data']['opponentpaddlex']
+                        game.lPaddley = newMessage['data']['opponentpaddley']
 
             Connection.send(newMessage)
         else:
