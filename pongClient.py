@@ -211,20 +211,14 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
-            if (sync + 5 < latestGame['seq']):
+            if (sync <= latestGame['seq']):
                 lScore = latestGame['score'][0]
                 rScore = latestGame['score'][1]
                 ball.rect.x = latestGame['ballx']
                 ball.rect.y = latestGame['bally']
                 ball.updatePos()
-                if playerPaddle == 'left':
-                    playerPaddleObj.rect.x = latestGame['lPaddlex']
-                    playerPaddleObj.rect.y = latestGame['lPaddley']
-                    playerPaddleObj.moving = latestGame['lPaddlemov']
-                elif playerPaddle == 'right':
-                    playerPaddleObj.rect.x = latestGame['rPaddlex']
-                    playerPaddleObj.rect.y = latestGame['rPaddley']
-                    playerPaddleObj.moving = latestGame['rPaddlemov']
+                sync = latestGame['seq']
+
             if playerPaddle == 'left':
                 opponentPaddleObj.rect.x = latestGame['rPaddlex']
                 opponentPaddleObj.rect.y = latestGame['rPaddley']

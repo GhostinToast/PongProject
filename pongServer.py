@@ -29,7 +29,7 @@ from socket_wrapper import sock_wrapper
 # Constants
 # IP of the host of the server. 
 # Ensure that the IP is the same as the pongClient.py.
-HOST = "localhost"
+HOST = 'localhost' #'192.168.159.1'
 # Port # of the server. Set > 1023 for non-priveleged ports. 
 # Ensure that the # is the same as the pointClient.py.
 PORT = 6000
