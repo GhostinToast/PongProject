@@ -219,7 +219,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
         # Send a request for client update.
         latestGame = handshake(client, mess)
-        print(latestGame)
         # Receive the latest copy of game data from the server
         # WIP: Make sure what's received is a game data frame....
         if latestGame != None:

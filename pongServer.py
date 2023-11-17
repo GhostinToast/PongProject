@@ -64,7 +64,7 @@ class gameSave:
         self.rReady_lock = threading.Lock()
         self.rReady = False # is the right player ready to start?
         self.df_lock = threading.Lock()
-        self.df = {
+        self.dataf = {
 
                     # Essentially the seq # for the frame
                     'seq': self.sync,
@@ -129,7 +129,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['playermov'] = game.lPaddlemov
                     Connection.send(game.dataf)
                     print("sent gimme")
-                if clientNumber == 0:
+                if clientNumber == 1:
                     with game.df_lock:
                         with game.lPaddle_lock:
                             game.dataf['opponentpaddlex'] = game.lPaddlex
