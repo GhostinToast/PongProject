@@ -107,6 +107,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     newMessage['data']['opponentpaddlex'] = game.rPaddlex
                     newMessage['data']['opponentpaddley'] = game.rPaddley
                     Connection.send(newMessage)
+                    print("sent update")
             elif clientNumber == 1:
                 with game.sync_lock:
                     newMessage['data']['seq'] = game.sync
@@ -119,22 +120,24 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     newMessage['data']['opponentpaddlex'] = game.lPaddlex
                     newMessage['data']['opponentpaddley'] = game.lPaddley
                 Connection.send(newMessage)
-            print("sent update")
+                print("sent update")
             continue
 
         if newMessage['type'] == 'update':
             with game.sync_lock:
-                if clientNumber == 0 and game.sync > newMessage['data']['seq']:
+                if clientNumber == 0 and game.sync >= newMessage['data']['seq']:
                     with game.lPaddle_lock:
                         game.lPaddlex = newMessage['data']['playerpaddlex']
                         game.lPaddley = newMessage['data']['playerpaddley']
                         game.lPaddlemov = newMessage['data']['playermov']
+                        print("update recvd")
                     continue
-                elif clientNumber == 1 and game.sync > newMessage['data']['seq']:
+                elif clientNumber == 1 and game.sync >= newMessage['data']['seq']:
                     with game.rPaddle_lock:
                         game.rPaddlex = newMessage['data']['playerpaddlex']
                         game.rPaddley = newMessage['data']['playerpaddley']
                         game.rPaddlemov = newMessage['data']['playermov']
+                        print("update recvd")
                     continue
             with game.sync_lock:
                 game.sync = newMessage['data']['seq']
