@@ -10,7 +10,7 @@ import pygame
 import tkinter as tk
 import sys
 import socket
-import json
+
 
 from socket_wrapper import sock_wrapper
 
@@ -64,7 +64,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
     rScore = 0
     sync = 0
     last_update_time = 0
-    update_interval = 40 
+    update_interval = 10 
     last_play_time = 0
     play_interval = 10
     while True:
