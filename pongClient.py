@@ -64,7 +64,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
     rScore = 0
     sync = 0
     last_update_time = 0
-    update_interval = 100 
+    update_interval = 50 
     while True:
         # Wiping the screen
         screen.fill((0,0,0))
@@ -84,6 +84,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             elif event.type == pygame.KEYUP:
                 playerPaddleObj.moving = ""
 
+        # Send the update to the server.
         # =========================================================================================
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
@@ -97,10 +98,12 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             # Player Paddle's x and y positions
             'playerpaddlex': playerPaddleObj.rect.x,
             'playerpaddley': playerPaddleObj.rect.y,
+            'playermov' : playerPaddleObj.moving,
             # these are server use only
             #didnt see the point of making a server df, so...
             'opponentpaddlex': 0,
             'opponentpaddley': 0,
+            'enemov': '',
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
@@ -124,7 +127,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         last_update_time = current_time
         # Send the update to the server.
         
-
+  
         # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
 
         # =========================================================================================
@@ -221,6 +224,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                 playerPaddleObj.moving = latestGame['data']['playermov']
             opponentPaddleObj.rect.x = latestGame['data']['opponentpaddlex']
             opponentPaddleObj.rect.y = latestGame['data']['opponentpaddley']
+            opponentPaddleObj.moving = latestGame['data']['enemov']
             ball.updatePos()
         # =========================================================================================
 
