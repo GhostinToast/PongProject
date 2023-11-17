@@ -69,6 +69,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
     Connection = sock_wrapper(clientSocket)
 
     while not shutDown.is_set() and not Connection.closed:
+        # Receive data from the client
         try:
             _ , newMessage = Connection.recv()
 
@@ -122,9 +123,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     Connection.send(newMessage)
                     print("sent update")
                 continue
-            if newMessage['type'] == 'score':
-                with game.score_lock:
-                    game.score = newMessage['data']
+
             if newMessage['type'] == 'update':
                 with game.sync_lock:
                     if clientNumber == 0 and game.sync >= newMessage['data']['seq']:
@@ -145,7 +144,10 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                     game.sync = newMessage['data']['seq']
                 with game.ball_lock:
                     game.ballx = newMessage['data']['ballx']
-                    game.bally = newMessage['data']['bally']                    
+                    game.bally = newMessage['data']['bally']
+                with game.score_lock:
+                    game.score = newMessage['data']['score']
+                    
                 if clientNumber == 0:
                     with game.lPaddle_lock:
                         game.lPaddlex = newMessage['data']['playerpaddlex']
@@ -165,7 +167,6 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
             print(f"Client {clientNumber} disconnected unexpectedly.")
             shutDown.set()  # Set the shutdown flag
             Connection.close()  # Close the client socket
-        
 
 
 

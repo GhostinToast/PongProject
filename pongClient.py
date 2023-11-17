@@ -17,14 +17,13 @@ from socket_wrapper import sock_wrapper
 # Constants
 
 from assets.code.helperCode import *
-# Efficient resource loading - Load resources once outside the game loop
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wrapper) -> None:
     
-   # Pygame inits
+    # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
 
@@ -90,13 +89,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
         # Dictonary to send the client's game data to the server
-
-   
-        current_time = pygame.time.get_ticks()
-        if current_time - last_update_time > update_interval:
-        # Your code to send updates to the server
-        # ...
-            dataFrame = {
+        dataFrame = {
 
             # Essentially the seq # for the frame
             'seq': sync,
@@ -115,13 +108,18 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
             # Scores
             'score': [lScore,rScore]
-            }
-            mess = {
+        }
+        mess = {
             'type': 'update',
             'data': dataFrame
-            }
+        }
 
 
+   
+        current_time = pygame.time.get_ticks()
+        if current_time - last_update_time > update_interval:
+        # Your code to send updates to the server
+        # ...
             client.send(mess)
         last_update_time = current_time
         # Send the update to the server.
@@ -157,20 +155,10 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                 lScore += 1
                 pointSound.play()
                 ball.reset(nowGoing="left")
-                scoredate = {
-                'type': 'score',
-                'data': [lScore, rScore]
-                }
-                client.send(scoredate)
             elif ball.rect.x < 0:
                 rScore += 1
                 pointSound.play()
                 ball.reset(nowGoing="right")
-                scoredate = {
-                'type': 'score',
-                'data': [lScore, rScore]
-                }
-                client.send(scoredate)
                 
             # If the ball hits a paddle
             if ball.rect.colliderect(playerPaddleObj.rect):
@@ -217,7 +205,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
         # Send a request for client update.
         latestGame = handshake(client, mess)
-        
+        print(latestGame)
+        # Receive the latest copy of game data from the server
+        # WIP: Make sure what's received is a game data frame....
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
@@ -327,4 +317,8 @@ def handshake(wSock:sock_wrapper, request:dict) -> dict:
 
 if __name__ == "__main__":
     startScreen()
-
+    
+    # Uncomment the line below if you want to play the game without a server to see how it should work
+    # the startScreen() function should call playGame with the arguments given to it by the server this is
+    # here for demo purposes only
+    #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
