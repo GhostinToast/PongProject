@@ -62,7 +62,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
     lScore = 0
     rScore = 0
-
     sync = 0
 
     while True:
@@ -88,7 +87,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        
         # Dictonary to send the client's game data to the server
         dataFrame = {
 
@@ -105,7 +103,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
             # Ball's x and y positions
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
-
             'playermov': playerPaddleObj.moving,
 
             # Scores
@@ -188,6 +185,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
         # catch up (use their info)
         sync += 1
+
         # =========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
@@ -198,22 +196,22 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
         # Send a request for client update.
         latestGame = handshake(client, mess)
+        print(latestGame)
         # Receive the latest copy of game data from the server
         # WIP: Make sure what's received is a game data frame....
         if latestGame != None:
             # Update game params based on the latestGame data
             #this should either get the highest sync or just grab the opponent's data
-            sync = latestGame['data']['seq']
+            if ((sync + 2) < latestGame['data']['seq']):
+                ball.rect.x = latestGame['data']['ballx']
+                ball.rect.y = latestGame['data']['bally']
+                lScore = latestGame['data']['score'][0]
+                rScore = latestGame['data']['score'][1]
+                playerPaddleObj.rect.x = latestGame['data']['playerpaddlex']
+                playerPaddleObj.rect.y = latestGame['data']['playerpaddley']
+                playerPaddleObj.moving = latestGame['data']['playermov']
             opponentPaddleObj.rect.x = latestGame['data']['opponentpaddlex']
             opponentPaddleObj.rect.y = latestGame['data']['opponentpaddley']
-            ball.rect.x = latestGame['data']['ballx']
-            ball.rect.y = latestGame['data']['bally']
-            lScore = latestGame['data']['score'][0]
-            rScore = latestGame['data']['score'][1]
-            playerPaddleObj.rect.x = latestGame['data']['playerpaddlex']
-            playerPaddleObj.rect.y = latestGame['data']['playerpaddley']
-            playerPaddleObj.moving = latestGame['data']['playermov']
-
         # =========================================================================================
 
 

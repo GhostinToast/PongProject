@@ -106,6 +106,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 with game.rPaddle_lock:
                     newMessage['data']['opponentpaddlex'] = game.rPaddlex
                     newMessage['data']['opponentpaddley'] = game.rPaddley
+                    Connection.send(newMessage)
             elif clientNumber == 1:
                 with game.sync_lock:
                     newMessage['data']['seq'] = game.sync
@@ -117,7 +118,7 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 with game.lPaddle_lock:
                     newMessage['data']['opponentpaddlex'] = game.lPaddlex
                     newMessage['data']['opponentpaddley'] = game.lPaddley
-            Connection.send(newMessage)
+                Connection.send(newMessage)
             print("sent update")
             continue
 
