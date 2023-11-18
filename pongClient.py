@@ -62,10 +62,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
     lScore = 0
     rScore = 0
     sync = 0
-    last_update_time = 0
+
+    last_update_time = 0        # these two are used to slow down the updates and thus limit overloading the server
     update_interval = 10 
-    last_play_time = 0
-    play_interval = 10
+
+
     while True:
         # Wiping the screen
         screen.fill((0,0,0))
@@ -87,47 +88,35 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
 
         # Send the update to the server.
         # =========================================================================================
-        # Your code here to send an update to the server on your paddle's information,
-        # where the ball is and the current score.
-        # Feel free to change when the score is updated to suit your needs/requirements
-        # Dictonary to send the client's game data to the server
-        dataFrame = {
 
+        dataFrame = {       # the technical parts of the server update message
             # Essentially the seq # for the frame
             'seq': sync,
+
+            # update the player paddle info to send out
             'playerpaddlex': playerPaddleObj.rect.x,
             'playerpaddley': playerPaddleObj.rect.y,
             'playermov' : playerPaddleObj.moving,
 
-            # Player Paddle's x and y position
-            # these are server use only
-            #didnt see the point of making a server df, so...
-            # Ball's x and y positions
+            # update the ball info to send out
             'ballx': ball.rect.x,
             'bally': ball.rect.y,
 
-            # Scores
+            # Scores to send
             'score': [lScore,rScore]
         }
-        mess = {
+        mess = {        # this message is an update message as it contains the info to update the server with
             'type': 'update',
             'data': dataFrame
         }
 
-
-   
-        current_time = pygame.time.get_ticks()
+        # this little section sends out the update, if it's been long enough
+        #   timed with a tiny delay to avoid overloading the server
+        current_time = pygame.time.get_ticks()      
         if current_time - last_update_time > update_interval:
-        # Your code to send updates to the server
-        # ...
             client.send(mess)
         last_update_time = current_time
-        # Send the update to the server.
-        
-  
-        # WIP: Do we need to grab and set whether opponent paddle is moving according to the for loop below?
-        # Send the update to the server.
-
+    
         # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
@@ -140,7 +129,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
                     paddle.rect.y -= paddle.speed
 
         # If the game is over, display the win message
-        if lScore > 40 or rScore > 40:
+        if lScore > 4 or rScore > 4:
             winText = "Player 1 Wins! " if lScore > 4 else "Player 2 Wins! "
             textSurface = winFont.render(winText, False, WHITE, (0,0,0))
             textRect = textSurface.get_rect()
@@ -197,33 +186,33 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         sync += 1
 
         # =========================================================================================
-        # Send your server update here at the end of the game loop to sync your game with your
-        # opponent's game
-        mess = {
+        # the gimme
+
+        mess = {        # create the gimme message; just a sync # and th type
             'type': 'gimme',
             'seq': sync
         }
 
-        # Send a request for client update.
-        latestGame = handshake(client, mess)
-        # Receive the latest copy of game data from the server
-        # WIP: Make sure what's received is a game data frame....
-        if latestGame != None:
+        latestGame = handshake(client, mess)    # get the update from the server
+
+        if latestGame != None:  # if we got useful info, 
             # Update game params based on the latestGame data
-            #this should either get the highest sync or just grab the opponent's data
-            if (sync <= latestGame['seq']):
+            
+            if (sync + 5 <= latestGame['seq']): # if there's a hefty disrepency in sync numbers, (and we're behind)
+                # update this client's score & ball position with the info gleaned from the server
                 lScore = latestGame['score'][0]
                 rScore = latestGame['score'][1]
                 ball.rect.x = latestGame['ballx']
                 ball.rect.y = latestGame['bally']
+                # update the ball, and the sequence number
                 ball.updatePos()
                 sync = latestGame['seq']
 
-            if playerPaddle == 'left':
+            if playerPaddle == 'left':      # if we're the left player, grab the right paddle's latest info
                 opponentPaddleObj.rect.x = latestGame['rPaddlex']
                 opponentPaddleObj.rect.y = latestGame['rPaddley']
                 opponentPaddleObj.moving = latestGame['rPaddlemov']
-            elif playerPaddle == 'right':
+            elif playerPaddle == 'right':   # vice versa
                 opponentPaddleObj.rect.x = latestGame['lPaddlex']
                 opponentPaddleObj.rect.y = latestGame['lPaddley']
                 opponentPaddleObj.moving = latestGame['lPaddlemov']
@@ -249,23 +238,30 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        #Connect to server with specified host ip
-        client.connect((ip, 6000))
+        #Connect to server with specified host ip, defaults = localhost & 6000
+        if (port == ''): 
+            port = '6000'
+        if (ip == ''):
+            ip = 'localhost'
+
+        client.connect((ip, int(port))) 
+    
+    # in the event of a connection error: 
     except (ConnectionRefusedError, socket.error) as e:
         print(f"Connection error: {e}")
         errorLabel.config(text="Connection error. Please check the server.")
         errorLabel.update()
         return
 
-    
 
     # Wrap the client for send/receive handling
     wClient = sock_wrapper(client)
-    initRequest = {
+    initRequest = { # create the 'start' message
         'type': 'start',
         'data': False,
         'playerpaddle': ''
     }
+    # repeatedly send the start message until we hear the server is ready to play
     while initRequest['data'] != True: 
         initRequest = handshake(wClient, initRequest)
 
@@ -314,10 +310,10 @@ def startScreen():
 # Author:        Alexander Wise
 # Purpose:       Handles the receiving of tuples of encoded json dictionaries from the server.
 # Pre:           This method expects a wrapped client socket to be connected to a server that is sending/receiving data.
-# Post:          The method sends a request in the form of a dictionary, and waits for a valid dictionary tuple to return.
+# Post:          The method sends a request (a 'gimme') in the form of a dictionary, and waits for a valid dictionary tuple to return.
 def handshake(wSock:sock_wrapper, request:dict) -> dict:
-    wSock.send(request)
-    received , data = wSock.recv()
+    wSock.send(request)                 # using the wrapper, send out the 'gimme' message
+    received , data = wSock.recv()      # grab the response
 
     # If server doesn't send data back, close
     if not data:
@@ -326,10 +322,10 @@ def handshake(wSock:sock_wrapper, request:dict) -> dict:
         wSock.close()
         quit()
     
-    while not received:
+    while not received: # while we don't have the info, repeatedly ask for it
         wSock.send(request)
         received , data = wSock.recv()
-    return data
+    return data                         # return it once we get it
 
 if __name__ == "__main__":
     startScreen()
