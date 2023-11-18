@@ -198,7 +198,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:sock_wr
         if latestGame != None:  # if we got useful info, 
             # Update game params based on the latestGame data
             
-            if (sync + 5 <= latestGame['seq']): # if there's a hefty disrepency in sync numbers, (and we're behind)
+            if (sync <= latestGame['seq']): # if there's a hefty disrepency in sync numbers, (and we're behind)
                 # update this client's score & ball position with the info gleaned from the server
                 lScore = latestGame['score'][0]
                 rScore = latestGame['score'][1]
