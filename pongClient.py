@@ -318,7 +318,15 @@ def startScreen():
 def handshake(wSock:sock_wrapper, request:dict) -> dict:
     wSock.send(request)
     received , data = wSock.recv()
-    while not received or data == None:
+
+    # If server doesn't send data back, close
+    if not data:
+        print(f"Server isn't responding. ")
+        print(f"Client closing.")
+        wSock.close()
+        quit()
+    
+    while not received:
         wSock.send(request)
         received , data = wSock.recv()
     return data

@@ -89,13 +89,16 @@ class gameSave:
 
 def clientControl(shutDown, game, clientSocket, clientNumber):
     Connection = sock_wrapper(clientSocket)
-
     while not shutDown.is_set() and not Connection.closed:
         # Receive data from the client
         try:
             _ , newMessage = Connection.recv()
 
-            if newMessage is None:
+            # Close server on empty data.
+            if not newMessage:
+                print(f"Client {clientNumber} disconnected unexpectedly.")
+                shutDown.set()  # Set the shutdown flag
+                Connection.close()  # Close the client socket
                 break
 
             if newMessage['type'] == 'start':
@@ -158,10 +161,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                 continue
             else:
                 print(f"Unknown message type: {newMessage['type']}")
-        except ConnectionResetError:
-            print(f"Client {clientNumber} disconnected unexpectedly.")
-            shutDown.set()  # Set the shutdown flag
-            Connection.close()  # Close the client socket
+        except Connection.holder.error:
+            print(f"Server will close.")
     
 
 
