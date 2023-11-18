@@ -29,54 +29,69 @@ from socket_wrapper import sock_wrapper
 # Constants
 # IP of the host of the server. 
 # Ensure that the IP is the same as the pongClient.py.
-HOST = 'localhost' #'192.168.159.1'
+HOST = 'localhost'#'192.168.159.1'
 # Port # of the server. Set > 1023 for non-priveleged ports. 
 # Ensure that the # is the same as the pointClient.py.
 PORT = 6000
 
 # Use this file to write your server logic
 # You will need to support at least two clients
-# Game Information
+
+
+# This class holds the most current information about the game status
 class gameSave:
     def __init__(self):
-        self.ball_lock = threading.Lock()
-        self.ballx = 0 # X, Y
+
+        # ball movement and relevant locks
+        self.ball_lock = threading.Lock()       # ball movement thread locker
+        self.ballx = 0 # X, Y                   # ball positions
         self.bally = 0
-        self.score_lock = threading.Lock()
+
+        # score tracker info
+        self.score_lock = threading.Lock()    
         self.score = [0,0] # lScore, rScore
 
+        # right paddle
         self.rPaddle_lock = threading.Lock()
         self.rPaddlex = 0 # X, Y, Moving
         self.rPaddley = 0
         self.rPaddlemov = ""
 
+        # left paddle
         self.lPaddle_lock = threading.Lock()
         self.lPaddlex = 0 # X, Y, Moving
         self.lPaddley = 0
         self.lPaddlemov = ""
 
+        # sync (the sync from the clients)
         self.sync_lock = threading.Lock()
-        self.sync = 0 # The current sync between the two clients
+        self.sync = 0 # The most recent sync # we saw
 
+        # left player ready to play (connected & communicating)
         self.lReady_lock = threading.Lock()
         self.lReady = False # Is the left player ready to start?
 
+        # right player ready to play
         self.rReady_lock = threading.Lock()
         self.rReady = False # is the right player ready to start?
+
+        # data frame; the information we'll send to the clients each outgoing update
         self.df_lock = threading.Lock()
         self.dataf = {
 
                     # Essentially the seq # for the frame
                     'seq': self.sync,
 
-                    # Player Paddle's x and y positions
+                    # left paddle's x and y positions
                     'lPaddlex': self.lPaddlex,
                     'lPaddley': self.lPaddley,
                     'lPaddlemov' : self.lPaddlemov,
                 
+                    # right paddle's x and y positions
                     'rPaddlex': self.rPaddlex,
                     'rPaddley': self.rPaddley,
                     'rPaddlemov': self.rPaddlemov,
+
                     # Ball's x and y positions
                     'ballx': self.ballx,
                     'bally': self.bally,
@@ -88,20 +103,26 @@ class gameSave:
 
 
 def clientControl(shutDown, game, clientSocket, clientNumber):
-    Connection = sock_wrapper(clientSocket)
+    Connection = sock_wrapper(clientSocket)         # see socket_wrapper.py; we use a wrapper to handle ...
+       # a lot of the details of the connection, such as error handling
 
     while not shutDown.is_set() and not Connection.closed:
-        # Receive data from the client
+        # Try to receive data from the client
         try:
-            _ , newMessage = Connection.recv()
+            _ , newMessage = Connection.recv() 
 
+            # if we got an empty message, we're done.
             if newMessage is None:
                 break
 
+            # if we get a start message, 
             if newMessage['type'] == 'start':
                 if clientNumber == 0:
+                    # mark this player as ready to go
                     with game.lReady_lock:
                         game.lReady = True
+
+                    # and add the side that this player will control to the message
                     newMessage['playerpaddle'] = 'left'
 
                 elif clientNumber == 1:
@@ -109,29 +130,45 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                         game.rReady = True
                     newMessage['playerpaddle'] = 'right'
 
+                # if both sides are ready to play, (note the use of locks to check)
                 with game.lReady_lock, game.rReady_lock:
+                    # add the info that we're ready for data to the message
                     if game.lReady and game.rReady:
                         newMessage['data'] = True
                     else:
                         newMessage['data'] = False
+                    # and send out the message
                     Connection.send(newMessage)
                 continue
 
+            # if we get a gimme message (aka the client requests info)
             if newMessage['type'] == 'gimme':
                 print(game.dataf)
+                # give the info! :D
                 Connection.send(game.dataf)
                 continue
             
+            # if we get an update from the client
             elif newMessage['type'] == 'update':
+
+                # lock the gamesync so we can check it...
                 game.sync_lock.acquire() 
-                if game.dataf['seq'] < newMessage['data']['seq']:
+                # if the update is newer than what we currently have, 
+                if game.dataf['seq'] < newMessage['data']['seq']:    
+                    # update our sequence #, and the unlock the seq# lock   
                     game.dataf['seq'] = newMessage['data']['seq']
                     game.sync_lock.release()
+
+                    # grab the ball data from the update
                     with game.ball_lock:
                         game.dataf['ballx'] = newMessage['data']['ballx']
                         game.dataf['bally'] = newMessage['data']['bally']
+
+                    # grab the score from the incoming update
                     with game.score_lock:
                         game.dataf['score'] = newMessage['data']['score']
+                    
+                    # then grab only the paddle data from the relevant side
                     if clientNumber == 0:
                         with game.lPaddle_lock:
                             game.dataf['lPaddlex'] = newMessage['data']['playerpaddlex']
@@ -142,6 +179,8 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['rPaddlex'] = newMessage['data']['playerpaddlex']
                             game.dataf['rPaddley'] = newMessage['data']['playerpaddley']
                             game.dataf['rPaddlemov'] = newMessage['data']['playermov']
+
+                    # keep us updated ￣へ￣
                     print("update received")
                 else:
                     game.sync_lock.release()
@@ -156,9 +195,14 @@ def clientControl(shutDown, game, clientSocket, clientNumber):
                             game.dataf['rPaddley'] = newMessage['data']['playerpaddley']
                             game.dataf['rPaddlemov'] = newMessage['data']['playermov']
                 continue
+            
+            # if we get a message we weren't expecting, ಠ╭╮ಠ
             else:
                 print(f"Unknown message type: {newMessage['type']}")
+
+        # if we got a connection error, even more  ಠ╭╮ಠ. perhaps even ಥ_ಥ   
         except ConnectionResetError:
+            # but thats okey cause this isn't the marines and giving up is an option!
             print(f"Client {clientNumber} disconnected unexpectedly.")
             shutDown.set()  # Set the shutdown flag
             Connection.close()  # Close the client socket
@@ -181,16 +225,20 @@ def main():
     # Event to shutdown the server
     endServer = threading.Event()
 
+    # listen for new clients
     server.listen()
-
+    # set up our main game info spot
     gameState = gameSave()
 
-    clientNum = 0
-    maxClient = 2
+
+    clientNum = 0       # used to track which client is connecting
+    maxClient = 2       # self-explanatory
+
 
     while not endServer.is_set() and clientNum < maxClient:
         # Accept a connection from a client
         newClient, retAddress = server.accept()
+        # (～￣▽￣)～ "Got one!"
         print('Client ' + str(retAddress) + ' connected.')
 
         # Create a new thread for each client
@@ -205,8 +253,6 @@ def main():
     for client in clientThreads:
         client.join()
 
-
-  
     print('Server Closing')
 
 if __name__ == "__main__": 
